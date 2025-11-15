@@ -1,17 +1,17 @@
-import multer from "multer";
-import { v2 as cloudinary } from "cloudinary";
-import { CloudinaryStorage } from "multer-storage-cloudinary";
 
-// Cloudinary video storage
-const storage = new CloudinaryStorage({
-  cloudinary: cloudinary,
-  params: {
-    folder: "yourtube_videos",
-    resource_type: "video",
-    format: async (req, file) => "mp4", // Convert all to mp4
+import multer from "multer";
+
+const storage = multer.memoryStorage();
+
+const upload = multer({
+  storage,
+  limits: {
+    fileSize: 200 * 1024 * 1024, 
+  },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith("video/")) cb(null, true);
+    else cb(new Error("Only video files are allowed"), false);
   },
 });
 
-const uploadCloud = multer({ storage });
-
-export default uploadCloud;
+export default upload;

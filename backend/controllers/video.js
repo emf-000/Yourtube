@@ -10,6 +10,23 @@ cloudinary.config({
   api_secret: process.env.CLOUD_SECRET,
 });
 
+const uploadBufferToCloudinary = (buffer, filename) => {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        resource_type: "video",
+        folder: "yourtube",
+        public_id: filename ? filename.replace(/\.[^/.]+$/, "") : undefined,
+      },
+      (error, result) => {
+        if (error) return reject(error);
+        resolve(result);
+      }
+    );
+    stream.end(buffer);
+  });
+};
+
 export const uploadvideo = async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ message: "Upload a video file" });
