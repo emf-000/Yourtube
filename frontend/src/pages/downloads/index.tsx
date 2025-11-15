@@ -13,7 +13,9 @@ const DownloadsPage = () => {
   const getDownloads = async () => {
     if (!user) return;
     const res = await axiosInstance.get(`/download/user/${user._id}`);
-     console.log("downloaded videos:", res.data.downloads); 
+     console.log("downloaded videos:", res.data.downloads);
+      res.data.downloads.forEach((v: any) => {
+    }); 
     setVideos(res.data.downloads);
   };
 
@@ -29,7 +31,14 @@ const DownloadsPage = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {videos.map((video: any) => (
           <div key={video._id} className="rounded-xl border shadow">
-            <video controls preload="metadata" className="rounded-t-xl w-full">
+          <video
+              key={video._id}
+              controls
+              autoPlay={false}
+              playsInline
+              preload="none"
+              style={{ width: "100%", height: "auto" }}
+            >
               <source src={video.videoUrl} type="video/mp4" />
             </video>
 

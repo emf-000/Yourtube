@@ -47,21 +47,26 @@ export const getDownloadedVideos = async (req, res) => {
   try {
     const { userId } = req.params;
 
-    const user = await User.findById(userId).populate("downloaded_videos");
-
+    const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ success: false, message: "User not found" });
     }
 
+    // Fetch full video documents
+    const videos = await Video.find({
+      _id: { $in: user.downloaded_videos }
+    });
+
     return res.json({
       success: true,
-      downloads: user.downloaded_videos,
+      downloads: videos
     });
 
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
+
 
 export const deleteDownload = async (req, res) => {
   try {
