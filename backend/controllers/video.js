@@ -28,17 +28,12 @@ const uploadBufferToCloudinary = (buffer, filename) => {
 };
 
 export const uploadvideo = async (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ message: "Upload a video file" });
-  }
-
   try {
-    const result = await cloudinary.uploader.upload(req.file.path, {
-      resource_type: "video",
-      folder: "yourtube",
-    });
+    if (!req.file) return res.status(400).json({ message: "Upload a video file" });
 
-    const videoUrl = result.secure_url;
+    // Upload buffer to Cloudinary
+    const result = await uploadBufferToCloudinary(req.file.buffer, req.file.originalname);
+
     const thumbnailUrl = cloudinary.url(result.public_id + ".jpg", {
       resource_type: "video",
       width: 400,
@@ -46,7 +41,6 @@ export const uploadvideo = async (req, res) => {
       crop: "fill",
     });
 
-    // Save video in DB
     const newVideo = await video.create({
       videotitle: req.body.videotitle,
       filename: req.file.originalname,
@@ -54,21 +48,16 @@ export const uploadvideo = async (req, res) => {
       filesize: req.file.size,
       videochanel: req.body.videochanel,
       uploader: req.body.uploader,
-      videoUrl: videoUrl,              
-      cloudinary_id: result.public_id,  
-      thumbnail: thumbnailUrl,          
-      duration: Math.floor(result.duration || 0), 
+      videoUrl: result.secure_url,
+      cloudinary_id: result.public_id,
+      duration: Math.floor(result.duration || 0),
+      thumbnail: thumbnailUrl,
     });
 
-    res.status(201).json({
-      message: "Video uploaded successfully",
-      video: newVideo,
-    });
-    
-
+    return res.status(201).json({ message: "Video uploaded successfully", video: newVideo });
   } catch (error) {
     console.error("Upload Error:", error);
-    res.status(500).json({ message: "Upload failed", error });
+    return res.status(500).json({ message: "Upload failed", error: error.message || error });
   }
 };
 
