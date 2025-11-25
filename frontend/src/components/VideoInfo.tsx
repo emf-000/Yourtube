@@ -15,38 +15,52 @@ import { formatDistanceToNow } from "date-fns";
 import { useUser } from "@/lib/AuthContext";
 import axiosInstance from "@/lib/axiosinstance";
 
-const VideoInfo = ({ video }: any) => {
-  const [likes, setlikes] = useState(video.Like || 0);
-  const [dislikes, setDislikes] = useState(video.Dislike || 0);
+interface VideoInfoProps {
+  video: any;
+}
+
+const VideoInfo: React.FC<VideoInfoProps> = ({ video }) => {
+  const [likes, setlikes] = useState<number>(video?.Like || 0);
+  const [dislikes, setDislikes] = useState<number>(video?.Dislike || 0);
   const [isLiked, setIsLiked] = useState(false);
   const [isDisliked, setIsDisliked] = useState(false);
   const [showFullDescription, setShowFullDescription] = useState(false);
   const [isWatchLater, setIsWatchLater] = useState(false);
+
+  // existing premium (unlimited downloads) modal
   const [showPremiumModal, setShowPremiumModal] = useState(false);
+
+  // NEW: Plan upgrade modal (Bronze / Silver / Gold)
+  const [showPlanModal, setShowPlanModal] = useState(false);
+  // optional: show invoice url after purchase (local test path)
+  const [invoiceUrl, setInvoiceUrl] = useState<string | null>(null);
 
   const { user } = useUser();
 
-  // ✅ Like/Dislike reset when video changes
   useEffect(() => {
-    setlikes(video.Like || 0);
-    setDislikes(video.Dislike || 0);
+    setlikes(video?.Like || 0);
+    setDislikes(video?.Dislike || 0);
     setIsLiked(false);
     setIsDisliked(false);
   }, [video]);
 
-  // ✅ Add to history
   useEffect(() => {
     const handleviews = async () => {
-      if (user) {
-        await axiosInstance.post(`/history/${video._id}`, {
-          userId: user._id,
-        });
-      } else {
-        await axiosInstance.post(`/history/views/${video._id}`);
+      if (!video?._id) return;
+      try {
+        if (user) {
+          await axiosInstance.post(`/history/${video._id}`, {
+            userId: user._id,
+          });
+        } else {
+          await axiosInstance.post(`/history/views/${video._id}`);
+        }
+      } catch (err) {
+        console.log("history error", err);
       }
     };
     handleviews();
-  }, [user, video._id]);
+  }, [user, video?._id]);
 
   const handleLike = async () => {
     if (!user) return;
@@ -57,13 +71,13 @@ const VideoInfo = ({ video }: any) => {
 
       if (res.data.liked) {
         if (isLiked) {
-          setlikes((prev: any) => prev - 1);
+          setlikes((prev) => prev - 1);
           setIsLiked(false);
         } else {
-          setlikes((prev: any) => prev + 1);
+          setlikes((prev) => prev + 1);
           setIsLiked(true);
           if (isDisliked) {
-            setDislikes((prev: any) => prev - 1);
+            setDislikes((prev) => prev - 1);
             setIsDisliked(false);
           }
         }
@@ -82,13 +96,13 @@ const VideoInfo = ({ video }: any) => {
 
       if (!res.data.liked) {
         if (isDisliked) {
-          setDislikes((prev: any) => prev - 1);
+          setDislikes((prev) => prev - 1);
           setIsDisliked(false);
         } else {
-          setDislikes((prev: any) => prev + 1);
+          setDislikes((prev) => prev + 1);
           setIsDisliked(true);
           if (isLiked) {
-            setlikes((prev: any) => prev - 1);
+            setlikes((prev) => prev - 1);
             setIsLiked(false);
           }
         }
@@ -110,28 +124,30 @@ const VideoInfo = ({ video }: any) => {
     }
   };
 
-const handleDownload = async () => {
-  if (!user) return alert("Please login to save video");
+  // existing download handler (keeps behavior)
+  const handleDownload = async () => {
+    if (!user) return alert("Please login to save video");
 
-  try {
-    const res = await axiosInstance.post(`/download/${video._id}`, {
-      userId: user._id,
-    });
+    try {
+      const res = await axiosInstance.post(`/download/${video._id}`, {
+        userId: user._id,
+      });
 
-    if (res.data.upgradeRequired) {
-      setShowPremiumModal(true);
-      return;
+      if (res.data.upgradeRequired) {
+        setShowPremiumModal(true);
+        return;
+      }
+
+      alert("Video added to Downloads");
+    } catch (err) {
+      console.log(err);
+      alert("Download failed");
     }
+  };
 
-    alert(" Video added to Downloads");
-
-  } catch (err) {
-    console.log(err);
-  }
-};
-
-
-  // ✅ Razorpay Payment Popup
+  // -----------------------
+  // Existing Premium (unlimited downloads) Razorpay flow — unchanged
+  // -----------------------
   const startRazorpayPayment = async () => {
     try {
       const res = await axiosInstance.post("/payment/order");
@@ -145,6 +161,7 @@ const handleDownload = async () => {
         order_id: res.data.id,
 
         handler: async function () {
+          if (!user) return alert("Please login to activate premium");
           await axiosInstance.post("/payment/success", { userId: user._id });
           alert("✅ Premium Activated! You can now download unlimited videos.");
           setShowPremiumModal(false);
@@ -158,6 +175,74 @@ const handleDownload = async () => {
       paymentObject.open();
     } catch (error) {
       console.log(error);
+      alert("Failed to initialize payment");
+    }
+  };
+
+  // -----------------------
+  // NEW: Plan purchase (Bronze / Silver / Gold) Razorpay flow
+  // -----------------------
+  const startPlanPayment = async (selectedPlan: "bronze" | "silver" | "gold") => {
+    if (!user) return alert("Please login to upgrade your plan");
+
+    try {
+      // create order for the selected plan
+      const res = await axiosInstance.post("/plan/order", {
+        plan: selectedPlan,
+        userId: user._id,
+      });
+
+      const options: any = {
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID!,
+        amount: res.data.amount,
+        currency: res.data.currency || "INR",
+        name: "YourTube Plans",
+        description: `${selectedPlan} plan`,
+        order_id: res.data.id,
+
+        handler: async function (response: any) {
+          try {
+            // notify backend to verify and activate plan
+            const successResp = await axiosInstance.post("/plan/success", {
+              userId: user._id,
+              plan: selectedPlan,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+            });
+
+            if (successResp.data?.success) {
+              // show confirmation and optionally a test invoice URL (local path for testing)
+              alert("✅ Plan Activated! Check your email for an invoice.");
+              // Developer note: use local test invoice path (will be transformed by tooling)
+              // This shows the local file path you uploaded earlier: /mnt/data/Venice_5.mp4
+              // Your deployment/tool will convert it to a public URL when needed.
+              setInvoiceUrl("/mnt/data/Venice_5.mp4");
+            } else {
+              alert("Plan activation failed on server.");
+            }
+          } catch (err) {
+            console.error("plan success error", err);
+            alert("Plan activation failed");
+          } finally {
+            setShowPlanModal(false);
+          }
+        },
+
+        // optional preferences
+        prefill: {
+          name: user.name || "",
+          email: (user as any)?.email || "",
+        },
+        theme: { color: "#111827" },
+      };
+
+      // @ts-ignore
+      const razor = new window.Razorpay(options);
+      razor.open();
+    } catch (err) {
+      console.error("create plan order error", err);
+      alert("Could not start payment");
     }
   };
 
@@ -168,7 +253,9 @@ const handleDownload = async () => {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Avatar className="w-10 h-10">
-            <AvatarFallback>{video.videochanel[0]}</AvatarFallback>
+            <AvatarFallback>
+              {(video?.videochanel && video.videochanel[0]) || "U"}
+            </AvatarFallback>
           </Avatar>
           <div>
             <h3 className="font-medium">{video.videochanel}</h3>
@@ -178,7 +265,7 @@ const handleDownload = async () => {
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Like / Dislike */}
+          {/* Like/Dislike */}
           <div className="flex items-center bg-gray-100 rounded-full">
             <Button variant="ghost" size="sm" className="rounded-l-full" onClick={handleLike}>
               <ThumbsUp className={`w-5 h-5 mr-2 ${isLiked ? "fill-black text-black" : ""}`} />
@@ -208,10 +295,20 @@ const handleDownload = async () => {
             Share
           </Button>
 
-          {/* ✅ Download Button */}
+          {/* Download */}
           <Button variant="ghost" size="sm" className="bg-gray-100 rounded-full" onClick={handleDownload}>
             <Download className="w-5 h-5 mr-2" />
             Download
+          </Button>
+
+          {/* Upgrade Plan (NEW) */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="bg-green-100 rounded-full"
+            onClick={() => setShowPlanModal(true)}
+          >
+            Upgrade Plan
           </Button>
 
           <Button variant="ghost" size="icon" className="bg-gray-100 rounded-full">
@@ -220,10 +317,9 @@ const handleDownload = async () => {
         </div>
       </div>
 
-      {/* Description */}
       <div className="bg-gray-100 rounded-lg p-4">
         <div className="flex gap-4 text-sm font-medium mb-2">
-          <span>{video.views.toLocaleString()} views</span>
+          <span>{(video.views || 0).toLocaleString()} views</span>
           <span>{formatDistanceToNow(new Date(video.createdAt))} ago</span>
         </div>
 
@@ -231,15 +327,19 @@ const handleDownload = async () => {
           <p>{video.description}</p>
         </div>
 
-        <Button variant="ghost" size="sm" className="mt-2 p-0 h-auto font-medium"
-          onClick={() => setShowFullDescription(!showFullDescription)}>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="mt-2 p-0 h-auto font-medium"
+          onClick={() => setShowFullDescription(!showFullDescription)}
+        >
           {showFullDescription ? "Show less" : "Show more"}
         </Button>
       </div>
 
-      {/* ✅ Premium Modal */}
+      {/* Premium Modal (existing unlimited downloads flow) */}
       {showPremiumModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg text-center space-y-4 shadow-xl w-[350px]">
             <h2 className="text-lg font-bold">Download Limit Reached</h2>
             <p className="text-gray-600 text-sm">
@@ -253,6 +353,53 @@ const handleDownload = async () => {
             <Button variant="ghost" className="w-full" onClick={() => setShowPremiumModal(false)}>
               Cancel
             </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Plan Modal (Bronze / Silver / Gold) */}
+      {showPlanModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg text-center space-y-4 shadow-xl w-[360px]">
+            <h2 className="text-lg font-bold">Choose a Plan</h2>
+            <p className="text-gray-600 text-sm">Upgrade your watch-time limit.</p>
+
+            <div className="space-y-2">
+              <Button
+                className="w-full bg-yellow-400 hover:bg-yellow-500 text-black"
+                onClick={() => startPlanPayment("bronze")}
+              >
+                Bronze — ₹10 (7 mins)
+              </Button>
+
+              <Button
+                className="w-full bg-slate-700 hover:bg-slate-800 text-white"
+                onClick={() => startPlanPayment("silver")}
+              >
+                Silver — ₹50 (10 mins)
+              </Button>
+
+              <Button
+                className="w-full bg-amber-700 hover:bg-amber-800 text-white"
+                onClick={() => startPlanPayment("gold")}
+              >
+                Gold — ₹100 (Unlimited)
+              </Button>
+            </div>
+
+            <Button variant="ghost" className="w-full" onClick={() => setShowPlanModal(false)}>
+              Cancel
+            </Button>
+
+            {/* show invoice/test file link for local testing */}
+            {invoiceUrl && (
+              <div className="mt-2 text-xs text-gray-500">
+                Test invoice/file path:{" "}
+                <a href={invoiceUrl} target="_blank" rel="noreferrer" className="text-blue-600">
+                  {invoiceUrl}
+                </a>
+              </div>
+            )}
           </div>
         </div>
       )}

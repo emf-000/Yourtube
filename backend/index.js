@@ -3,7 +3,6 @@ import cors from "cors";
 import dotenv from "dotenv";
 import bodyParser from "body-parser";
 import mongoose from "mongoose";
-
 import userroutes from "./routes/auth.js";
 import videoroutes from "./routes/video.js";
 import likeroutes from "./routes/like.js";
@@ -12,6 +11,7 @@ import historyrroutes from "./routes/history.js";
 import commentroutes from "./routes/comment.js";
 import downloadroutes from "./routes/download.js";
 import paymentroutes from "./routes/payment.js";
+import planroutes from "./routes/plan.js";
 
 dotenv.config();
 const app = express();
@@ -30,6 +30,7 @@ app.use("/history", historyrroutes);
 app.use("/comment", commentroutes);
 app.use("/download", downloadroutes);
 app.use("/payment", paymentroutes);
+app.use("/plan", planroutes);
 
 // DEFAULT
 app.get("/", (req, res) => {
