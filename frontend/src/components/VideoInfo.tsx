@@ -212,11 +212,7 @@ const VideoInfo: React.FC<VideoInfoProps> = ({ video }) => {
             });
 
             if (successResp.data?.success) {
-              // show confirmation and optionally a test invoice URL (local path for testing)
               alert("✅ Plan Activated! Check your email for an invoice.");
-              // Developer note: use local test invoice path (will be transformed by tooling)
-              // This shows the local file path you uploaded earlier: /mnt/data/Venice_5.mp4
-              // Your deployment/tool will convert it to a public URL when needed.
               setInvoiceUrl("/mnt/data/Venice_5.mp4");
             } else {
               alert("Plan activation failed on server.");
@@ -229,7 +225,6 @@ const VideoInfo: React.FC<VideoInfoProps> = ({ video }) => {
           }
         },
 
-        // optional preferences
         prefill: {
           name: user.name || "",
           email: (user as any)?.email || "",

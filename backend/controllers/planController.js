@@ -66,7 +66,7 @@ export const handlePlanPaymentSuccess = async (req, res) => {
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ success: false, message: "User not found" });
 
-    // Update user plan details
+    // Update user plan
     user.plan = plan;
     user.plan_updated_at = new Date();
     user.watch_limit_minutes =
@@ -85,24 +85,27 @@ export const handlePlanPaymentSuccess = async (req, res) => {
     user.payments.push(paymentRecord);
     await user.save();
 
-    // Generate invoice and send email
+    // Respond to frontend immediately
+    res.json({ success: true, message: "Plan Activated Successfully" });
+
+    // Continue sending invoice email in background
     const invoicePDF = await generateInvoicePdf(user, paymentRecord);
-    await sendInvoiceEmail(
+
+    sendInvoiceEmail(
       user.email,
       user.name || user.email,
       plan,
       paymentRecord.amount,
       invoicePDF
+    ).catch(err =>
+      console.error("Email send failed (ignored, does NOT affect payment):", err.message)
     );
-
-    return res.json({ success: true, message: "Plan Activated Successfully" });
 
   } catch (err) {
     console.error("Plan Payment Error:", err);
-    return res.status(500).json({ success: false, error: err.message });
+    res.status(500).json({ success: false, error: err.message });
   }
 };
-
 
 // --------------------------------------------------
 // PDF INVOICE
