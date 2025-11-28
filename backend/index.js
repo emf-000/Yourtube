@@ -46,27 +46,28 @@ app.get("/debug-email", async (req, res) => {
   try {
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
-      port: Number(process.env.SMTP_PORT), 
-      secure: true, 
+      port: 587,
+      secure: false,
+      requireTLS: true,
       auth: {
         user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
+        pass: process.env.SMTP_PASS
+      }
     });
 
     await transporter.sendMail({
       from: process.env.EMAIL_FROM,
-      to: process.env.SMTP_USER, 
-      subject: "Render Gmail Test",
-      text: "If you got this email, SMTP is working!",
+      to: process.env.SMTP_USER,
+      subject: "Render Gmail STARTTLS Test",
+      text: "Email reached Render using STARTTLS!"
     });
 
-    return res.send("Email sent successfully!");
+    res.send("EMAIL TEST SUCCESS");
   } catch (err) {
-    console.error("EMAIL ERROR:", err);
-    return res.status(500).send("Error: " + err.message);
+    res.status(500).send("ERROR: " + err.message);
   }
 });
+
 
 // DEFAULT
 app.get("/", (req, res) => {
@@ -82,5 +83,6 @@ mongoose
 // SERVER
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on ${PORT}`));
+
 
 
