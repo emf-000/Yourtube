@@ -33,6 +33,9 @@ app.use("/download", downloadroutes);
 app.use("/payment", paymentroutes);
 app.use("/plan", planroutes);
 
+app.get("/test-route", (req, res) => {
+  res.send("TEST ROUTE WORKING");
+});
 
 app.get("/debug-email", async (req, res) => {
   try {
@@ -74,3 +77,4 @@ mongoose
 // SERVER
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on ${PORT}`));
+
