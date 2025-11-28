@@ -85,10 +85,8 @@ export const handlePlanPaymentSuccess = async (req, res) => {
     user.payments.push(paymentRecord);
     await user.save();
 
-    // Respond to frontend immediately
     res.json({ success: true, message: "Plan Activated Successfully" });
 
-    // Continue sending invoice email in background
     const invoicePDF = await generateInvoicePdf(user, paymentRecord);
 
     sendInvoiceEmail(
@@ -142,7 +140,7 @@ const sendInvoiceEmail = async (to, name, plan, amount, pdf) => {
   const transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST,
     port: Number(process.env.SMTP_PORT || 587),
-    secure: false,
+    secure: true,
     auth: {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS,
