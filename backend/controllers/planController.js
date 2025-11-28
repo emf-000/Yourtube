@@ -138,20 +138,21 @@ const generateInvoicePdf = async (user, payment) => {
 // --------------------------------------------------
 const sendInvoiceEmail = async (to, name, plan, amount, pdf) => {
   const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: Number(process.env.SMTP_PORT || 587),
-    secure: true,
+    host: process.env.SMTP_HOST,       
+    port: Number(process.env.SMTP_PORT || 587), 
+    secure: false,                   
     auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
+      user: process.env.SMTP_USER,  
+      pass: process.env.SMTP_PASS,     
     },
   });
 
   await transporter.sendMail({
-    from: process.env.EMAIL_FROM,
+    from: process.env.EMAIL_FROM,     
     to,
     subject: `YourTube Invoice – ${plan} Plan`,
     text: `Hello ${name}, your ${plan} plan is activated.`,
     attachments: [{ filename: "invoice.pdf", content: pdf }],
   });
 };
+
