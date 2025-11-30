@@ -27,6 +27,7 @@
     "nodemailer": "^7.0.10",
     "nodemon": "^3.1.10",
     "pdfkit": "^0.17.2",
-    "razorpay": "^2.9.6"
+    "razorpay": "^2.9.6",
+    "sib-api-v3-sdk": "^8.5.0"
   }
 }

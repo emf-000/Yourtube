@@ -1,10 +1,10 @@
 import Razorpay from "razorpay";
 import PDFDocument from "pdfkit";
-import nodemailer from "nodemailer";
 import User from "../Modals/Auth.js";
 import { PLANS } from "../config/plans.js";
 import dotenv from "dotenv";
 import crypto from "crypto";
+import Brevo from "sib-api-v3-sdk";
 
 dotenv.config();
 
@@ -53,7 +53,6 @@ export const handlePlanPaymentSuccess = async (req, res) => {
       return res.status(400).json({ success: false, message: "Missing required fields" });
     }
 
-    // Verify Razorpay signature
     const expectedSignature = crypto
       .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
       .update(razorpay_order_id + "|" + razorpay_payment_id)
@@ -66,7 +65,6 @@ export const handlePlanPaymentSuccess = async (req, res) => {
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ success: false, message: "User not found" });
 
-    // Update user plan
     user.plan = plan;
     user.plan_updated_at = new Date();
     user.watch_limit_minutes =
@@ -136,23 +134,30 @@ const generateInvoicePdf = async (user, payment) => {
 // --------------------------------------------------
 // SEND EMAIL WITH ATTACHMENT
 // --------------------------------------------------
-const sendInvoiceEmail = async (to, name, plan, amount, pdf) => {
-  const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,       
-    port: Number(process.env.SMTP_PORT || 587), 
-    secure: false,                   
-    auth: {
-      user: process.env.SMTP_USER,  
-      pass: process.env.SMTP_PASS,     
-    },
-  });
 
-  await transporter.sendMail({
-    from: process.env.EMAIL_FROM,     
-    to,
-    subject: `YourTube Invoice – ${plan} Plan`,
-    text: `Hello ${name}, your ${plan} plan is activated.`,
-    attachments: [{ filename: "invoice.pdf", content: pdf }],
-  });
+const sendInvoiceEmail = async (to, name, plan, amount, pdfBuffer) => {
+  try {
+    const brevoClient = Brevo.ApiClient.instance;
+    brevoClient.authentications["api-key"].apiKey = process.env.BREVO_API_KEY;
+
+    const apiInstance = new Brevo.TransactionalEmailsApi();
+
+    await apiInstance.sendTransacEmail({
+      sender: { email: process.env.EMAIL_FROM },
+      to: [{ email: to }],
+      subject: `YourTube Invoice – ${plan} Plan`,
+      textContent: `Hello ${name}, your ${plan} plan is activated.`,
+
+      attachment: [
+        {
+          name: "invoice.pdf",
+          content: pdfBuffer.toString("base64"),
+          contentType: "application/pdf",
+        },
+      ],
+    });
+  } catch (err) {
+    console.error("Brevo API Email Error:", err.message);
+  }
 };
 
