@@ -133,3 +133,11 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+
+html.dark * {
+  background-color: var(--background) !important;
+  color: var(--foreground) !important;
+  border-color: var(--border) !important;
+}
+

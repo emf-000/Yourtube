@@ -1,9 +1,7 @@
-import { onAuthStateChanged, signInWithPopup, signOut } from "firebase/auth";
-import { useState } from "react";
-import { createContext } from "react";
+import { signInWithPopup, signOut } from "firebase/auth";
+import { useState, createContext, useContext } from "react";
 import { provider, auth } from "./firebase";
 import axiosInstance from "./axiosinstance";
-import { useEffect, useContext } from "react";
 
 const UserContext = createContext();
 
@@ -14,53 +12,72 @@ export const UserProvider = ({ children }) => {
     setUser(userdata);
     localStorage.setItem("user", JSON.stringify(userdata));
   };
+
   const logout = async () => {
     setUser(null);
     localStorage.removeItem("user");
-    try {
-      await signOut(auth);
-    } catch (error) {
-      console.error("Error during sign out:", error);
-    }
+    await signOut(auth);
   };
-  const handlegooglesignin = async () => {
+
+  const requestOTP = async (state, phone = "") => {
     try {
       const result = await signInWithPopup(auth, provider);
-      const firebaseuser = result.user;
+      const firebaseUser = result.user;
+
       const payload = {
-        email: firebaseuser.email,
-        name: firebaseuser.displayName,
-        image: firebaseuser.photoURL || "https://github.com/shadcn.png",
+        email: firebaseUser.email,
+        name: firebaseUser.displayName,
+        image: firebaseUser.photoURL,
+        state,
+        phone,
       };
-      const response = await axiosInstance.post("/user/login", payload);
-      console.log("Logged in user data from backend:", response.data.result);
-      login(response.data.result);
-    } catch (error) {
-      console.error(error);
+
+      localStorage.setItem("otpEmail", firebaseUser.email);
+      localStorage.setItem("otpPhone", phone);
+      localStorage.setItem("otpState", state);
+
+      const res = await axiosInstance.post("/user/login", payload);
+
+      return { success: true, method: res.data.method };
+    } catch (err) {
+      console.error("OTP Request Failed:", err);
+      return { success: false };
     }
   };
-  useEffect(() => {
-    const unsubcribe = onAuthStateChanged(auth, async (firebaseuser) => {
-      if (firebaseuser) {
-        try {
-          const payload = {
-            email: firebaseuser.email,
-            name: firebaseuser.displayName,
-            image: firebaseuser.photoURL || "https://github.com/shadcn.png",
-          };
-          const response = await axiosInstance.post("/user/login", payload);
-          login(response.data.result);
-        } catch (error) {
-          console.error(error);
-          logout();
-        }
-      }
+
+  const verifyOTP = async (otp) => {
+  try {
+    const email = localStorage.getItem("otpEmail");
+    const phone = localStorage.getItem("otpPhone");
+    const state = localStorage.getItem("otpState");
+
+    const res = await axiosInstance.post("/user/verify-otp", {
+      email,
+      phone,
+      otp,
+      state,
     });
-    return () => unsubcribe();
-  }, []);
+
+    if (res.data.message === "OTP verified successfully") {
+      const userRes = await axiosInstance.post("/user/get-user", { email });
+      login(userRes.data.result);
+      return { success: true };
+    }
+
+    return { success: false };
+
+  } catch (err) {
+    console.log("Invalid OTP or verification failed.");
+
+    return { success: false };  
+  }
+};
+
 
   return (
-    <UserContext.Provider value={{ user, login, logout, handlegooglesignin }}>
+    <UserContext.Provider
+      value={{ user, logout, requestOTP, verifyOTP }}
+    >
       {children}
     </UserContext.Provider>
   );

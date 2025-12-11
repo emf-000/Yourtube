@@ -16,11 +16,6 @@ import planroutes from "./routes/plan.js";
 dotenv.config();
 const app = express();
 
-console.log("RENDER ENV:", {
-  host: process.env.SMTP_HOST,
-  user: process.env.SMTP_USER,
-  pass: process.env.SMTP_PASS ? "YES" : "NO"
-});
 
 app.use(cors());
 app.use(express.json({ limit: "30mb" }));
