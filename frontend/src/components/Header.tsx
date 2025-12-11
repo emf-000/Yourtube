@@ -50,7 +50,7 @@ const Header: React.FC = () => {
       try {
         const res = await axios.get("https://ipapi.co/json/");
         const state = (res.data.region || "unknown").toLowerCase();
-        setUserState(state);
+        setUserState("karnataka");
 
         const south = SOUTH_STATES.includes(state);
         setIsSouth(south);
@@ -263,3 +263,4 @@ const Header: React.FC = () => {
 };
 
 export default Header;
+
