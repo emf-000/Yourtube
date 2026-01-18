@@ -141,3 +141,13 @@ html.dark * {
   border-color: var(--border) !important;
 }
 
+.scrollbar-hide {
+  -ms-overflow-style: none;  
+  scrollbar-width: none;     /
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;             
+}
+
+
