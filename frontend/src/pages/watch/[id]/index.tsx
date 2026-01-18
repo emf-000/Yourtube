@@ -34,12 +34,35 @@ export default function WatchPage() {
     window.scrollTo({ top, behavior: "smooth" });
   };
 
-  if (loading) return <div>Loading...</div>;
-  if (!video) return <div>Video not found</div>;
+  if (loading) {
+    return (
+      <div className="p-4 text-sm sm:text-base text-center">
+        Loading...
+      </div>
+    );
+  }
+
+  if (!video) {
+    return (
+      <div className="p-4 text-sm sm:text-base text-center">
+        Video not found
+      </div>
+    );
+  }
 
   return (
     <div className="w-full overflow-y-auto">
-      <div className="max-w-6xl mx-auto p-4 grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div
+        className="
+          max-w-6xl mx-auto
+          p-2 sm:p-4
+          grid
+          grid-cols-1
+          lg:grid-cols-3
+          gap-4 sm:gap-6
+        "
+      >
+        {/* MAIN CONTENT */}
         <div className="lg:col-span-2 space-y-4">
           <Videopplayer video={video} onShowComments={openComments} />
           <VideoInfo video={video} />
@@ -49,7 +72,10 @@ export default function WatchPage() {
           </div>
         </div>
 
-        <RelatedVideos videos={allVideos} />
+        {/* RELATED VIDEOS */}
+        <div className="lg:col-span-1">
+          <RelatedVideos videos={allVideos} />
+        </div>
       </div>
     </div>
   );

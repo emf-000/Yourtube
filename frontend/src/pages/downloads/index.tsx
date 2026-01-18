@@ -3,19 +3,14 @@
 import React, { useEffect, useState } from "react";
 import axiosInstance from "@/lib/axiosinstance";
 import { useUser } from "@/lib/AuthContext";
-import Link from "next/link";
 
 const DownloadsPage = () => {
   const { user } = useUser();
-  const [videos, setVideos] = useState([]);
+  const [videos, setVideos] = useState<any[]>([]);
 
-  // ✅ Fetch downloads list
   const getDownloads = async () => {
     if (!user) return;
     const res = await axiosInstance.get(`/download/user/${user._id}`);
-     console.log("downloaded videos:", res.data.downloads);
-      res.data.downloads.forEach((v: any) => {
-    }); 
     setVideos(res.data.downloads);
   };
 
@@ -23,30 +18,58 @@ const DownloadsPage = () => {
     getDownloads();
   }, [user]);
 
-  if (!user) return <div className="p-6 text-center">Please login.</div>;
+  if (!user) {
+    return (
+      <div className="p-4 sm:p-6 text-center text-sm sm:text-base">
+        Please login.
+      </div>
+    );
+  }
 
   return (
-    <div className="p-6 w-full">
-      <h1 className="text-2xl font-bold mb-4">Downloaded Videos</h1>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="p-3 sm:p-6 w-full max-w-7xl mx-auto">
+      <h1 className="text-lg sm:text-2xl font-bold mb-3 sm:mb-4">
+        Downloaded Videos
+      </h1>
+
+      <div
+        className="
+          grid
+          grid-cols-1
+          sm:grid-cols-2
+          lg:grid-cols-3
+          gap-3 sm:gap-4
+        "
+      >
         {videos.map((video: any) => (
-          <div key={video._id} className="rounded-xl border shadow">
-          <video
-              key={video._id}
+          <div
+            key={video._id}
+            className="rounded-xl border shadow-sm overflow-hidden"
+          >
+            <video
               controls
-              autoPlay={false}
               playsInline
               preload="none"
-              style={{ width: "100%", height: "auto" }}
+              className="w-full h-auto"
             >
               <source src={video.videoUrl} type="video/mp4" />
             </video>
 
             <div className="p-3">
-              <h3 className="font-semibold text-sm line-clamp-2">{video.videotitle}</h3>
+              <h3 className="font-semibold text-xs sm:text-sm line-clamp-2">
+                {video.videotitle}
+              </h3>
 
               <button
-                className="bg-red-500 hover:bg-red-600 text-white w-full py-1 rounded-md mt-2"
+                className="
+                  bg-red-500 hover:bg-red-600
+                  text-white
+                  w-full
+                  py-1.5 sm:py-2
+                  rounded-md
+                  mt-2
+                  text-xs sm:text-sm
+                "
                 onClick={() =>
                   axiosInstance
                     .delete(`/download/${video._id}/${user._id}`)

@@ -17,8 +17,7 @@ export default function VideoCard({ video }: any) {
 
   return (
     <Link href={`/watch/${video?._id}`} className="group">
-      <div className="space-y-3">
-
+      <div className="space-y-2 sm:space-y-3">
         {/* Thumbnail */}
         <div className="relative aspect-video rounded-lg overflow-hidden bg-gray-100">
           <img
@@ -28,25 +27,29 @@ export default function VideoCard({ video }: any) {
           />
 
           {/* Duration */}
-          <div className="absolute bottom-2 right-2 bg-black/80 text-white text-xs px-1 rounded">
+          <div className="absolute bottom-1.5 right-1.5 sm:bottom-2 sm:right-2 bg-black/80 text-white text-[10px] sm:text-xs px-1 rounded">
             {formatDuration(video.duration || 0)}
           </div>
         </div>
 
         {/* Description */}
-        <div className="flex gap-3">
-          <Avatar className="w-9 h-9 flex-shrink-0">
-            <AvatarFallback>{video?.videochanel[0]}</AvatarFallback>
+        <div className="flex gap-2 sm:gap-3">
+          <Avatar className="w-8 h-8 sm:w-9 sm:h-9 flex-shrink-0">
+            <AvatarFallback className="text-xs sm:text-sm">
+              {video?.videochanel[0]}
+            </AvatarFallback>
           </Avatar>
 
           <div className="flex-1 min-w-0">
-            <h3 className="font-medium text-sm line-clamp-2 group-hover:text-blue-600">
+            <h3 className="font-medium text-xs sm:text-sm line-clamp-2 group-hover:text-blue-600">
               {video?.videotitle}
             </h3>
 
-            <p className="text-sm text-gray-600 mt-1">{video?.videochanel}</p>
+            <p className="text-xs sm:text-sm text-gray-600 mt-1">
+              {video?.videochanel}
+            </p>
 
-            <p className="text-sm text-gray-600">
+            <p className="text-xs sm:text-sm text-gray-600">
               {video?.views.toLocaleString()} views •{" "}
               {formatDistanceToNow(new Date(video?.createdAt))} ago
             </p>

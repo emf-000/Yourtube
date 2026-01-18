@@ -26,22 +26,35 @@ const OTPModal: React.FC<OTPModalProps> = ({ isOpen, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50">
-      <div className="bg-white dark:bg-gray-900 p-6 rounded-xl w-80">
-        <h2 className="text-xl font-bold mb-4">Verify OTP</h2>
+    <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50 px-3">
+      <div
+        className="
+          bg-white dark:bg-gray-900
+          p-5 sm:p-6
+          rounded-xl
+          w-full max-w-xs sm:max-w-sm
+        "
+      >
+        <h2 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4">
+          Verify OTP
+        </h2>
 
         <Input
           value={otp}
           onChange={(e) => setOtp(e.target.value)}
           placeholder="Enter OTP"
-          className="mb-3"
+          className="mb-3 text-sm sm:text-base"
         />
 
-        <Button className="w-full" onClick={handleVerify}>
+        <Button className="w-full text-sm sm:text-base" onClick={handleVerify}>
           Verify
         </Button>
 
-        <Button variant="secondary" className="w-full mt-2" onClick={onClose}>
+        <Button
+          variant="secondary"
+          className="w-full mt-2 text-sm sm:text-base"
+          onClick={onClose}
+        >
           Cancel
         </Button>
       </div>

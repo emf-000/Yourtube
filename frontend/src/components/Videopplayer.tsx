@@ -48,82 +48,82 @@ export default function Videopplayer({
   }, [user, limitReached]);
 
   /* ================= GESTURES ================= */
- useEffect(() => {
-  const container = containerRef.current;
-  const videoEl = videoRef.current;
-  if (!container || !videoEl) return;
+  useEffect(() => {
+    const container = containerRef.current;
+    const videoEl = videoRef.current;
+    if (!container || !videoEl) return;
 
-  let tapCount = 0;
-  let tapTimer: any = null;
+    let tapCount = 0;
+    let tapTimer: any = null;
 
-  const TAP_WINDOW = 420; 
-  const onPointerDown = (e: PointerEvent) => {
-    if (limitReached) return;
+    const TAP_WINDOW = 420;
 
-    tapCount++;
+    const onPointerDown = (e: PointerEvent) => {
+      if (limitReached) return;
 
-    if (tapTimer) clearTimeout(tapTimer);
+      tapCount++;
+      if (tapTimer) clearTimeout(tapTimer);
 
-    tapTimer = setTimeout(() => {
-      const rect = container.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const width = rect.width;
+      tapTimer = setTimeout(() => {
+        const rect = container.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const width = rect.width;
 
-      const area =
-        x < width * 0.33
-          ? "left"
-          : x > width * 0.66
-          ? "right"
-          : "center";
+        const area =
+          x < width * 0.33
+            ? "left"
+            : x > width * 0.66
+            ? "right"
+            : "center";
 
-      // 🔹 SINGLE TAP
-      if (tapCount === 1 && area === "center") {
-        videoEl.paused ? videoEl.play() : videoEl.pause();
-      }
-
-      // 🔹 DOUBLE TAP
-      else if (tapCount === 2) {
-        if (area === "right") {
-          videoEl.currentTime += 10;
-          setSeekFeedback("right");
+        if (tapCount === 1 && area === "center") {
+          videoEl.paused ? videoEl.play() : videoEl.pause();
+        } else if (tapCount === 2) {
+          if (area === "right") {
+            videoEl.currentTime += 10;
+            setSeekFeedback("right");
+          }
+          if (area === "left") {
+            videoEl.currentTime -= 10;
+            setSeekFeedback("left");
+          }
+          setTimeout(() => setSeekFeedback(null), 400);
+        } else if (tapCount >= 3) {
+          if (area === "left") onShowComments();
+          if (area === "center") alert("Next video");
+          if (area === "right") window.location.href = "/";
         }
-        if (area === "left") {
-          videoEl.currentTime -= 10;
-          setSeekFeedback("left");
-        }
-        setTimeout(() => setSeekFeedback(null), 400);
-      }
 
-      // 🔹 TRIPLE TAP 
-      else if (tapCount >= 3) {
-        if (area === "left") onShowComments();
-        if (area === "center") alert("Next video");
-        if (area === "right") window.location.href = "/";
-      }
+        tapCount = 0;
+        tapTimer = null;
+      }, TAP_WINDOW);
+    };
 
-      tapCount = 0;
-      tapTimer = null;
-    }, TAP_WINDOW);
-  };
+    container.addEventListener("pointerdown", onPointerDown);
 
-  container.addEventListener("pointerdown", onPointerDown);
-
-  return () => {
-    container.removeEventListener("pointerdown", onPointerDown);
-    if (tapTimer) clearTimeout(tapTimer);
-  };
-}, [limitReached, onShowComments]);
-
+    return () => {
+      container.removeEventListener("pointerdown", onPointerDown);
+      if (tapTimer) clearTimeout(tapTimer);
+    };
+  }, [limitReached, onShowComments]);
 
   return (
     <div
       ref={containerRef}
-      className="relative w-full bg-black rounded-lg overflow-hidden"
-      style={{ height: "420px" }}
+      className="
+        relative
+        w-full
+        bg-black
+        rounded-lg
+        overflow-hidden
+        aspect-video
+        sm:aspect-video
+        max-h-[60vh]
+      "
     >
       <video
         ref={videoRef}
-        className="w-full h-full"
+        className="w-full h-full object-contain"
         controls
         playsInline
         preload="auto"
@@ -135,11 +135,11 @@ export default function Videopplayer({
         <div
           className={`absolute inset-0 flex items-center ${
             seekFeedback === "right"
-              ? "justify-end pr-16"
-              : "justify-start pl-16"
+              ? "justify-end pr-8 sm:pr-16"
+              : "justify-start pl-8 sm:pl-16"
           } pointer-events-none`}
         >
-          <div className="bg-black/70 text-white px-4 py-2 rounded-full text-lg font-semibold">
+          <div className="bg-black/70 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-base sm:text-lg font-semibold">
             {seekFeedback === "right" ? "+10s" : "-10s"}
           </div>
         </div>

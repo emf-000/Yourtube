@@ -3,7 +3,6 @@ import Channeltabs from "@/components/Channeltabs";
 import ChannelVideos from "@/components/ChannelVideos";
 import VideoUploader from "@/components/VideoUploader";
 import { useUser } from "@/lib/AuthContext";
-import { notFound } from "next/navigation";
 import { useRouter } from "next/router";
 import React from "react";
 
@@ -11,15 +10,10 @@ const index = () => {
   const router = useRouter();
   const { id } = router.query;
   const { user } = useUser();
-  // const user: any = {
-  //   id: "1",
-  //   name: "John Doe",
-  //   email: "john@example.com",
-  //   image: "https://github.com/shadcn.png?height=32&width=32",
-  // };
+
   try {
     let channel = user;
-   
+
     const videos = [
       {
         _id: "1",
@@ -48,15 +42,29 @@ const index = () => {
         createdAt: new Date(Date.now() - 86400000).toISOString(),
       },
     ];
+
     return (
       <div className="flex-1 min-h-screen bg-white">
-        <div className="max-w-full mx-auto">
+        <div className="max-w-7xl mx-auto">
+          {/* Header */}
           <ChannelHeader channel={channel} user={user} />
-          <Channeltabs />
-          <div className="px-4 pb-8">
-            <VideoUploader channelId={id} channelName={channel?.channelname} />
+
+          {/* Tabs */}
+          <div className="sticky top-0 z-10 bg-white">
+            <Channeltabs />
           </div>
-          <div className="px-4 pb-8">
+
+          {/* Content */}
+          <div className="px-2 sm:px-4 pb-6 sm:pb-8 space-y-6">
+            {/* Upload section */}
+            <div className="max-w-3xl">
+              <VideoUploader
+                channelId={id}
+                channelName={channel?.channelname}
+              />
+            </div>
+
+            {/* Videos */}
             <ChannelVideos videos={videos} />
           </div>
         </div>
@@ -64,7 +72,6 @@ const index = () => {
     );
   } catch (error) {
     console.error("Error fetching channel data:", error);
-   
   }
 };
 

@@ -3,10 +3,19 @@ import { Suspense } from "react";
 
 export default function WatchLaterPage() {
   return (
-    <main className="flex-1 p-6">
-      <div className="max-w-4xl">
-        <h1 className="text-2xl font-bold mb-6">Watch later</h1>
-        <Suspense fallback={<div>Loading watch later...</div>}>
+    <main className="flex-1 p-3 sm:p-6">
+      <div className="max-w-4xl mx-auto">
+        <h1 className="text-lg sm:text-2xl font-bold mb-4 sm:mb-6">
+          Watch later
+        </h1>
+
+        <Suspense
+          fallback={
+            <div className="text-sm sm:text-base text-center">
+              Loading watch later...
+            </div>
+          }
+        >
           <WatchLaterContent />
         </Suspense>
       </div>

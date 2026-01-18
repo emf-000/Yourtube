@@ -14,6 +14,7 @@ const VideoUploader = ({ channelId, channelName }: any) => {
   const [videoTitle, setVideoTitle] = useState("");
   const [uploadComplete, setUploadComplete] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
   const handlefilechange = (e: ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files && files.length > 0) {
@@ -27,45 +28,41 @@ const VideoUploader = ({ channelId, channelName }: any) => {
         return;
       }
       setVideoFile(file);
-      const filename = file.name;
-      if (!videoTitle) {
-        setVideoTitle(filename);
-      }
+      if (!videoTitle) setVideoTitle(file.name);
     }
   };
+
   const resetForm = () => {
     setVideoFile(null);
     setVideoTitle("");
     setIsUploading(false);
     setUploadProgress(0);
     setUploadComplete(false);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
+
   const cancelUpload = () => {
-    if (isUploading) {
-      toast.error("Your video upload has been cancelled");
-    }
+    if (isUploading) toast.error("Your video upload has been cancelled");
   };
+
   const handleUpload = async () => {
     if (!videoFile || !videoTitle.trim()) {
       toast.error("Please provide file and title");
       return;
     }
+
     const formdata = new FormData();
     formdata.append("file", videoFile);
     formdata.append("videotitle", videoTitle);
     formdata.append("videochanel", channelName);
     formdata.append("uploader", channelId);
-    console.log(formdata)
+
     try {
       setIsUploading(true);
       setUploadProgress(0);
-      const res = await axiosInstance.post("/video/upload", formdata, {
-         headers: {
-    "Content-Type": "multipart/form-data",
-  },
+
+      await axiosInstance.post("/video/upload", formdata, {
+        headers: { "Content-Type": "multipart/form-data" },
         onUploadProgress: (progresEvent: any) => {
           const progress = Math.round(
             (progresEvent.loaded * 100) / progresEvent.total
@@ -73,6 +70,7 @@ const VideoUploader = ({ channelId, channelName }: any) => {
           setUploadProgress(progress);
         },
       });
+
       toast.success("Upload successfully");
       resetForm();
     } catch (error) {
@@ -82,26 +80,41 @@ const VideoUploader = ({ channelId, channelName }: any) => {
       setIsUploading(false);
     }
   };
+
   return (
-    <div className="bg-gray-50 rounded-lg p-6">
-      <h2 className="text-xl font-semibold mb-4">Upload a video</h2>
+    <div className="bg-gray-50 rounded-lg p-4 sm:p-6">
+      <h2 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4">
+        Upload a video
+      </h2>
 
       <div className="space-y-4">
         {!videoFile ? (
           <div
-            className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:bg-gray-100 transition-colors"
+            className="
+              border-2 border-dashed border-gray-300
+              rounded-lg
+              p-6 sm:p-8
+              text-center
+              cursor-pointer
+              hover:bg-gray-100
+              transition-colors
+            "
             onClick={() => fileInputRef.current?.click()}
           >
-            <Upload className="w-12 h-12 mx-auto text-gray-400 mb-2" />
-            <p className="text-lg font-medium">
+            <Upload className="w-10 h-10 sm:w-12 sm:h-12 mx-auto text-gray-400 mb-2" />
+
+            <p className="text-base sm:text-lg font-medium">
               Drag and drop video files to upload
             </p>
-            <p className="text-sm text-gray-500 mt-1">
+
+            <p className="text-xs sm:text-sm text-gray-500 mt-1">
               or click to select files
             </p>
-            <p className="text-xs text-gray-400 mt-4">
+
+            <p className="text-[10px] sm:text-xs text-gray-400 mt-4">
               MP4, WebM, MOV or AVI • Up to 100MB
             </p>
+
             <input
               type="file"
               ref={fileInputRef}
@@ -114,43 +127,48 @@ const VideoUploader = ({ channelId, channelName }: any) => {
           <div className="space-y-4">
             <div className="flex items-center gap-3 p-3 bg-white rounded-lg border">
               <div className="bg-blue-100 p-2 rounded-md">
-                <FileVideo className="w-6 h-6 text-blue-600" />
+                <FileVideo className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
               </div>
+
               <div className="flex-1 min-w-0">
-                <p className="font-medium truncate">{videoFile.name}</p>
-                <p className="text-sm text-gray-500">
+                <p className="font-medium truncate text-sm sm:text-base">
+                  {videoFile.name}
+                </p>
+                <p className="text-xs sm:text-sm text-gray-500">
                   {(videoFile.size / (1024 * 1024)).toFixed(2)} MB
                 </p>
               </div>
+
               {!isUploading && (
                 <Button variant="ghost" size="icon" onClick={cancelUpload}>
-                  <X className="w-5 h-5" />
+                  <X className="w-4 h-4 sm:w-5 sm:h-5" />
                 </Button>
               )}
+
               {uploadComplete && (
                 <div className="bg-green-100 p-1 rounded-full">
-                  <Check className="w-5 h-5 text-green-600" />
+                  <Check className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
                 </div>
               )}
             </div>
 
-            <div className="space-y-3">
-              <div>
-                <Label htmlFor="title">Title (required)</Label>
-                <Input
-                  id="title"
-                  value={videoTitle}
-                  onChange={(e) => setVideoTitle(e.target.value)}
-                  placeholder="Add a title that describes your video"
-                  disabled={isUploading || uploadComplete}
-                  className="mt-1"
-                />
-              </div>
+            <div>
+              <Label htmlFor="title" className="text-sm sm:text-base">
+                Title (required)
+              </Label>
+              <Input
+                id="title"
+                value={videoTitle}
+                onChange={(e) => setVideoTitle(e.target.value)}
+                placeholder="Add a title that describes your video"
+                disabled={isUploading || uploadComplete}
+                className="mt-1 text-sm sm:text-base"
+              />
             </div>
 
             {isUploading && (
               <div className="space-y-2">
-                <div className="flex justify-between text-sm">
+                <div className="flex justify-between text-xs sm:text-sm">
                   <span>Uploading...</span>
                   <span>{uploadProgress}%</span>
                 </div>
@@ -158,10 +176,14 @@ const VideoUploader = ({ channelId, channelName }: any) => {
               </div>
             )}
 
-            <div className="flex justify-end gap-3">
+            <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">
               {!uploadComplete && (
                 <>
-                  <Button onClick={cancelUpload} disabled={uploadComplete}>
+                  <Button
+                    onClick={cancelUpload}
+                    disabled={uploadComplete}
+                    className="w-full sm:w-auto"
+                  >
                     Cancel
                   </Button>
                   <Button
@@ -169,6 +191,7 @@ const VideoUploader = ({ channelId, channelName }: any) => {
                     disabled={
                       isUploading || !videoTitle.trim() || uploadComplete
                     }
+                    className="w-full sm:w-auto"
                   >
                     {isUploading ? "Uploading..." : "Upload"}
                   </Button>
