@@ -33,7 +33,6 @@ const SOUTH_STATES = [
   "telangana",
 ];
 
-// ✅ ACCEPT onMenuClick PROP
 const Header: React.FC<{ onMenuClick?: () => void }> = ({ onMenuClick }) => {
   const { user, logout, requestOTP } = useUser();
   const [searchQuery, setSearchQuery] = useState("");
@@ -50,7 +49,7 @@ const Header: React.FC<{ onMenuClick?: () => void }> = ({ onMenuClick }) => {
       try {
         const res = await axios.get("https://ipapi.co/json/");
         const state = (res.data.region || "unknown").toLowerCase();
-        setUserState("karnataka"); // For testing purposes, set a default state
+        setUserState(state);
 
         const south = SOUTH_STATES.includes(state);
         setIsSouth(south);
@@ -120,6 +119,7 @@ const Header: React.FC<{ onMenuClick?: () => void }> = ({ onMenuClick }) => {
       ${isWhiteTheme ? "bg-white text-black" : "bg-background text-foreground"}`}
     >
       <div className="flex items-center gap-2 sm:gap-4">
+        
         <Button variant="ghost" size="icon" onClick={onMenuClick}>
           <Menu className="w-5 h-5 sm:w-6 sm:h-6" />
         </Button>
@@ -227,3 +227,5 @@ const Header: React.FC<{ onMenuClick?: () => void }> = ({ onMenuClick }) => {
 };
 
 export default Header;
+
+
