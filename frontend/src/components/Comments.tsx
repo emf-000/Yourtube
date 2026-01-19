@@ -46,13 +46,120 @@ const Comments = ({ videoId }: any) => {
 
   if (loading) return <div>Loading comments...</div>;
 
+  const handleSubmitComment = async () => {
+    if (!user || !newComment.trim()) return;
+
+    setIsSubmitting(true);
+    try {
+      const res = await axiosInstance.post("/comment/postcomment", {
+        videoid: videoId,
+        userid: user._id,
+        commentbody: newComment,
+        usercommented: user.name,
+      });
+
+      if (res.data.comment) {
+        setComments((prev) => [res.data.comment, ...prev]);
+      }
+
+      setNewComment("");
+    } catch (error) {
+      console.error("Error adding comment:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleEdit = (comment: Comment) => {
+    setEditingCommentId(comment._id);
+    setEditText(comment.commentbody);
+  };
+
+  const handleUpdateComment = async () => {
+    if (!editText.trim()) return;
+    try {
+      await axiosInstance.post(`/comment/editcomment/${editingCommentId}`, {
+        commentbody: editText,
+      });
+
+      setComments((prev) =>
+        prev.map((c) =>
+          c._id === editingCommentId ? { ...c, commentbody: editText } : c
+        )
+      );
+      setEditingCommentId(null);
+      setEditText("");
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      const res = await axiosInstance.delete(`/comment/deletecomment/${id}`);
+      if (res.data.comment) {
+        setComments((prev) => prev.filter((c) => c._id !== id));
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const handleLike = async (id: string) => {
+    try {
+      const res = await axiosInstance.post(`/comment/like/${id}`, {
+        userId: user._id,
+      });
+      setComments((prev) =>
+        prev.map((c) => (c._id === id ? { ...c, likes: res.data.likes } : c))
+      );
+    } catch (error) {
+      console.error("Error liking comment:", error);
+    }
+  };
+
+  const handleDislike = async (id: string) => {
+    try {
+      const res = await axiosInstance.post(`/comment/dislike/${id}`, {
+        userId: user._id,
+      });
+      if (res.data.removed) {
+        setComments((prev) => prev.filter((c) => c._id !== id));
+      } else {
+        setComments((prev) =>
+          prev.map((c) =>
+            c._id === id ? { ...c, dislikes: res.data.dislikes } : c
+          )
+        );
+      }
+    } catch (error) {
+      console.error("Error disliking comment:", error);
+    }
+  };
+
+  const handleTranslate = async (text: string, id: string) => {
+    try {
+      setTranslatingId(id);
+      const res = await axiosInstance.post("/comment/translate", { text });
+
+      setComments((prev) =>
+        prev.map((c) =>
+          c._id === id ? { ...c, translated: res.data.translatedText } : c
+        )
+      );
+    } catch (error) {
+      console.error("Translation failed:", error);
+    } finally {
+      setTranslatingId(null);
+    }
+  };
+
   return (
     <div className="space-y-4 sm:space-y-6">
-      <h2 className="text-lg sm:text-xl font-semibold">
+      <h2 className="text-base sm:text-xl font-semibold">
         {comments.length} Comments
       </h2>
 
-      {/* Add Comment */}
       {user && (
         <div className="flex gap-3 sm:gap-4">
           <Avatar className="w-8 h-8 sm:w-10 sm:h-10">
@@ -65,13 +172,12 @@ const Comments = ({ videoId }: any) => {
               placeholder="Add a comment..."
               value={newComment}
               onChange={(e: any) => setNewComment(e.target.value)}
-              className="min-h-[70px] sm:min-h-[80px] text-sm sm:text-base resize-none border-0 border-b-2 rounded-none focus-visible:ring-0"
+              className="min-h-[60px] sm:min-h-[80px] text-sm sm:text-base resize-none border-0 border-b-2 rounded-none focus-visible:ring-0"
             />
-
-            <div className="flex gap-2 justify-end">
+            <div className="flex flex-wrap gap-2 justify-end">
               <Button
-                variant="ghost"
                 size="sm"
+                variant="ghost"
                 onClick={() => setNewComment("")}
                 disabled={!newComment.trim()}
               >
@@ -79,7 +185,7 @@ const Comments = ({ videoId }: any) => {
               </Button>
               <Button
                 size="sm"
-                onClick={() => {}}
+                onClick={handleSubmitComment}
                 disabled={!newComment.trim() || isSubmitting}
               >
                 Comment
@@ -89,7 +195,6 @@ const Comments = ({ videoId }: any) => {
         </div>
       )}
 
-      {/* Comments List */}
       <div className="space-y-4">
         {comments.length === 0 ? (
           <p className="text-xs sm:text-sm text-gray-500 italic">
@@ -99,7 +204,9 @@ const Comments = ({ videoId }: any) => {
           comments.map((comment) => (
             <div key={comment._id} className="flex gap-3 sm:gap-4">
               <Avatar className="w-8 h-8 sm:w-10 sm:h-10">
-                <AvatarFallback>{comment.usercommented[0]}</AvatarFallback>
+                <AvatarFallback>
+                  {comment.usercommented?.[0] || "U"}
+                </AvatarFallback>
               </Avatar>
 
               <div className="flex-1">
@@ -120,8 +227,8 @@ const Comments = ({ videoId }: any) => {
                       onChange={(e) => setEditText(e.target.value)}
                       className="text-sm sm:text-base"
                     />
-                    <div className="flex gap-2 justify-end">
-                      <Button size="sm" disabled={!editText.trim()}>
+                    <div className="flex flex-wrap gap-2 justify-end">
+                      <Button size="sm" onClick={handleUpdateComment} disabled={!editText.trim()}>
                         Save
                       </Button>
                       <Button
@@ -138,20 +245,24 @@ const Comments = ({ videoId }: any) => {
                   </div>
                 ) : (
                   <>
-                    <p className="text-xs sm:text-sm">
+                    <p className="text-xs sm:text-sm break-words">
                       {comment.translated?.trim()
                         ? comment.translated
                         : comment.commentbody}
                     </p>
 
                     <div className="flex flex-wrap gap-3 sm:gap-4 text-xs sm:text-sm mt-2">
-                      <button onClick={() => {}}>
+                      <button onClick={() => handleLike(comment._id)}>
                         👍 {comment.likes?.length || 0}
                       </button>
-                      <button onClick={() => {}}>
+                      <button onClick={() => handleDislike(comment._id)}>
                         👎 {comment.dislikes?.length || 0}
                       </button>
-                      <button onClick={() => {}}>
+                      <button
+                        onClick={() =>
+                          handleTranslate(comment.commentbody, comment._id)
+                        }
+                      >
                         {translatingId === comment._id
                           ? "Translating..."
                           : "🌐 Translate"}
@@ -159,9 +270,13 @@ const Comments = ({ videoId }: any) => {
                     </div>
 
                     {comment.userid === user?._id && (
-                      <div className="flex gap-3 mt-2 text-xs sm:text-sm text-gray-500">
-                        <button>Edit</button>
-                        <button>Delete</button>
+                      <div className="flex flex-wrap gap-2 mt-2 text-xs sm:text-sm text-gray-500">
+                        <button onClick={() => handleEdit(comment)}>
+                          Edit
+                        </button>
+                        <button onClick={() => handleDelete(comment._id)}>
+                          Delete
+                        </button>
                       </div>
                     )}
                   </>

@@ -50,7 +50,7 @@ const Header: React.FC<{ onMenuClick?: () => void }> = ({ onMenuClick }) => {
       try {
         const res = await axios.get("https://ipapi.co/json/");
         const state = (res.data.region || "unknown").toLowerCase();
-        setUserState(state);
+        setUserState("karnataka"); // For testing purposes, set a default state
 
         const south = SOUTH_STATES.includes(state);
         setIsSouth(south);
@@ -119,9 +119,7 @@ const Header: React.FC<{ onMenuClick?: () => void }> = ({ onMenuClick }) => {
       className={`flex items-center justify-between px-3 sm:px-4 py-2 border-b
       ${isWhiteTheme ? "bg-white text-black" : "bg-background text-foreground"}`}
     >
-      {/* LEFT */}
       <div className="flex items-center gap-2 sm:gap-4">
-        {/* ✅ MENU BUTTON WIRED */}
         <Button variant="ghost" size="icon" onClick={onMenuClick}>
           <Menu className="w-5 h-5 sm:w-6 sm:h-6" />
         </Button>
@@ -213,7 +211,6 @@ const Header: React.FC<{ onMenuClick?: () => void }> = ({ onMenuClick }) => {
         )}
       </div>
 
-      {/* Modals */}
       <Channeldialogue
         isopen={dialogOpen}
         onclose={() => setDialogOpen(false)}

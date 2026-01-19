@@ -7,21 +7,17 @@ const ChannelHeader = ({ channel, user }: any) => {
 
   return (
     <div className="w-full">
-      {/* Banner */}
       <div className="relative h-28 sm:h-32 md:h-48 lg:h-64 bg-gradient-to-r from-blue-400 to-purple-500 overflow-hidden"></div>
 
-      {/* Channel Info */}
       <div className="px-4 sm:px-6 py-4 sm:py-6">
         <div className="flex flex-col md:flex-row gap-4 sm:gap-6 items-start md:items-center">
           
-          {/* Avatar */}
           <Avatar className="w-16 h-16 sm:w-20 sm:h-20 md:w-32 md:h-32">
             <AvatarFallback className="text-xl sm:text-2xl">
               {channel?.channelname[0]}
             </AvatarFallback>
           </Avatar>
 
-          {/* Channel Details */}
           <div className="flex-1 space-y-2">
             <h1 className="text-xl sm:text-2xl md:text-4xl font-bold">
               {channel?.channelname}
@@ -40,7 +36,6 @@ const ChannelHeader = ({ channel, user }: any) => {
             )}
           </div>
 
-          {/* Subscribe Button */}
           {user && user?._id !== channel?._id && (
             <div className="w-full md:w-auto">
               <Button

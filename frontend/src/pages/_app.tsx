@@ -46,7 +46,8 @@ export default function App({ Component, pageProps }: AppProps) {
               md:translate-x-0
             `}
           >
-            <Sidebar />
+            <Sidebar onClose={() => setSidebarOpen(false)} />
+
           </aside>
 
           {/* MAIN CONTENT (ONLY SCROLL AREA) */}
