@@ -4,22 +4,29 @@ import User from "../Modals/Auth.js";
 import { PLANS } from "../config/plans.js";
 import dotenv from "dotenv";
 import crypto from "crypto";
-import Brevo from "sib-api-v3-sdk";
+import { Resend } from "resend";
 
 dotenv.config();
 
+// ================== RAZORPAY INIT ==================
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
   key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
+
+// ================== RESEND INIT ==================
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 // --------------------------------------------------
 // CREATE RAZORPAY ORDER FOR PLAN
 // --------------------------------------------------
 export const createPlanOrder = async (req, res) => {
   try {
-    const { plan, userId } = req.body;
-    if (!PLANS[plan]) return res.status(400).json({ error: "Invalid plan" });
+    const { plan } = req.body;
+
+    if (!PLANS[plan]) {
+      return res.status(400).json({ error: "Invalid plan" });
+    }
 
     const amountInPaise = PLANS[plan].price * 100;
 
@@ -32,12 +39,13 @@ export const createPlanOrder = async (req, res) => {
 
     return res.json(order);
   } catch (err) {
+    console.error("Create order error:", err);
     res.status(500).json({ error: err.message });
   }
 };
 
 // --------------------------------------------------
-// VERIFY PAYMENT + ACTIVATE PLAN
+// VERIFY PAYMENT + ACTIVATE PLAN + SEND INVOICE
 // --------------------------------------------------
 export const handlePlanPaymentSuccess = async (req, res) => {
   try {
@@ -46,65 +54,102 @@ export const handlePlanPaymentSuccess = async (req, res) => {
       plan,
       razorpay_order_id,
       razorpay_payment_id,
-      razorpay_signature
+      razorpay_signature,
     } = req.body;
 
-    if (!userId || !plan || !razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
-      return res.status(400).json({ success: false, message: "Missing required fields" });
+    if (
+      !userId ||
+      !plan ||
+      !razorpay_order_id ||
+      !razorpay_payment_id ||
+      !razorpay_signature
+    ) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Missing required fields" });
     }
 
+    // ✅ Verify Razorpay Signature
     const expectedSignature = crypto
       .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
-      .update(razorpay_order_id + "|" + razorpay_payment_id)
+      .update(`${razorpay_order_id}|${razorpay_payment_id}`)
       .digest("hex");
 
     if (expectedSignature !== razorpay_signature) {
-      return res.status(400).json({ success: false, message: "Invalid signature" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid signature" });
     }
 
     const user = await User.findById(userId);
-    if (!user) return res.status(404).json({ success: false, message: "User not found" });
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
 
+    // ✅ Update plan
     user.plan = plan;
     user.plan_updated_at = new Date();
     user.watch_limit_minutes =
       PLANS[plan].minutes === Infinity ? 0 : PLANS[plan].minutes;
 
-    // Save payment record
     const paymentRecord = {
       plan,
       amount: PLANS[plan].price,
       razorpay_order_id,
       razorpay_payment_id,
       razorpay_signature,
-      date: new Date()
+      date: new Date(),
     };
 
     user.payments.push(paymentRecord);
     await user.save();
 
-    res.json({ success: true, message: "Plan Activated Successfully" });
-
+    // ✅ Generate Invoice PDF
     const invoicePDF = await generateInvoicePdf(user, paymentRecord);
 
-    sendInvoiceEmail(
-      user.email,
-      user.name || user.email,
-      plan,
-      paymentRecord.amount,
-      invoicePDF
-    ).catch(err =>
-      console.error("Email send failed (ignored, does NOT affect payment):", err.message)
-    );
+    // ✅ Send Invoice Email (RESEND)
+    try {
+      await resend.emails.send({
+        from: process.env.EMAIL_FROM, // VERIFIED DOMAIN EMAIL
+        to: user.email,
+        subject: `YourTube Invoice – ${plan} Plan`,
+        html: `
+          <p>Hello ${user.name || user.email},</p>
+          <p>Your <strong>${plan}</strong> plan is activated.</p>
+          <p>Amount Paid: ₹${paymentRecord.amount}</p>
+        `,
+        attachments: [
+          {
+            filename: "invoice.pdf",
+            content: invoicePDF,
+          },
+        ],
+      });
+
+      console.log("📧 Invoice email sent:", user.email);
+    } catch (emailErr) {
+      console.error("❌ Invoice email failed:", emailErr);
+    }
+
+    // ✅ Respond AFTER email
+    return res.json({
+      success: true,
+      message: "Plan Activated Successfully",
+    });
 
   } catch (err) {
     console.error("Plan Payment Error:", err);
-    res.status(500).json({ success: false, error: err.message });
+    return res.status(500).json({
+      success: false,
+      error: err.message,
+    });
   }
 };
 
 // --------------------------------------------------
-// PDF INVOICE
+// GENERATE PDF INVOICE
 // --------------------------------------------------
 const generateInvoicePdf = async (user, payment) => {
   return new Promise((resolve, reject) => {
@@ -117,12 +162,13 @@ const generateInvoicePdf = async (user, payment) => {
 
       doc.fontSize(20).text("YourTube Invoice", { align: "center" });
       doc.moveDown();
+
       doc.fontSize(12).text(`Name: ${user.name || user.email}`);
       doc.text(`Email: ${user.email}`);
       doc.text(`Plan: ${payment.plan}`);
-      doc.text(`Amount: ₹${payment.amount}`);
+      doc.text(`Amount Paid: ₹${payment.amount}`);
       doc.text(`Payment ID: ${payment.razorpay_payment_id}`);
-      doc.text(`Date: ${new Date().toLocaleString()}`);
+      doc.text(`Date: ${new Date(payment.date).toLocaleString()}`);
 
       doc.end();
     } catch (err) {
@@ -130,34 +176,3 @@ const generateInvoicePdf = async (user, payment) => {
     }
   });
 };
-
-// --------------------------------------------------
-// SEND EMAIL WITH ATTACHMENT
-// --------------------------------------------------
-
-const sendInvoiceEmail = async (to, name, plan, amount, pdfBuffer) => {
-  try {
-    const brevoClient = Brevo.ApiClient.instance;
-    brevoClient.authentications["api-key"].apiKey = process.env.BREVO_API_KEY;
-
-    const apiInstance = new Brevo.TransactionalEmailsApi();
-
-    await apiInstance.sendTransacEmail({
-      sender: { email: process.env.EMAIL_FROM },
-      to: [{ email: to }],
-      subject: `YourTube Invoice – ${plan} Plan`,
-      textContent: `Hello ${name}, your ${plan} plan is activated.`,
-
-      attachment: [
-        {
-          name: "invoice.pdf",
-          content: pdfBuffer.toString("base64"),
-          contentType: "application/pdf",
-        },
-      ],
-    });
-  } catch (err) {
-    console.error("Brevo API Email Error:", err.message);
-  }
-};
-
