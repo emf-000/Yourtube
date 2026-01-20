@@ -4,7 +4,7 @@ import User from "../Modals/Auth.js";
 import { PLANS } from "../config/plans.js";
 import dotenv from "dotenv";
 import crypto from "crypto";
-import { Resend } from "resend";
+import Brevo from "sib-api-v3-sdk";
 
 dotenv.config();
 
@@ -14,8 +14,10 @@ const razorpay = new Razorpay({
   key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
 
-// ================== RESEND INIT ==================
-const resend = new Resend(process.env.RESEND_API_KEY);
+// ================== BREVO INIT (ONCE) ==================
+const brevoClient = Brevo.ApiClient.instance;
+brevoClient.authentications["api-key"].apiKey = process.env.BREVO_API_KEY;
+const brevoApi = new Brevo.TransactionalEmailsApi();
 
 // --------------------------------------------------
 // CREATE RAZORPAY ORDER FOR PLAN
@@ -40,7 +42,7 @@ export const createPlanOrder = async (req, res) => {
     return res.json(order);
   } catch (err) {
     console.error("Create order error:", err);
-    res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: err.message });
   }
 };
 
@@ -88,7 +90,7 @@ export const handlePlanPaymentSuccess = async (req, res) => {
         .json({ success: false, message: "User not found" });
     }
 
-    // ✅ Update plan
+    // ✅ Update user plan
     user.plan = plan;
     user.plan_updated_at = new Date();
     user.watch_limit_minutes =
@@ -109,31 +111,43 @@ export const handlePlanPaymentSuccess = async (req, res) => {
     // ✅ Generate Invoice PDF
     const invoicePDF = await generateInvoicePdf(user, paymentRecord);
 
-    // ✅ Send Invoice Email (RESEND)
+    // ✅ Send Invoice Email via BREVO
     try {
-      await resend.emails.send({
-        from: process.env.EMAIL_FROM, // VERIFIED DOMAIN EMAIL
-        to: user.email,
+      await brevoApi.sendTransacEmail({
+        sender: {
+          name: "YourTube",
+          email: process.env.EMAIL_FROM, // Gmail or domain
+        },
+        to: [
+          {
+            email: user.email,
+            name: user.name || user.email,
+          },
+        ],
         subject: `YourTube Invoice – ${plan} Plan`,
-        html: `
+        htmlContent: `
           <p>Hello ${user.name || user.email},</p>
           <p>Your <strong>${plan}</strong> plan is activated.</p>
           <p>Amount Paid: ₹${paymentRecord.amount}</p>
         `,
-        attachments: [
+        attachment: [
           {
-            filename: "invoice.pdf",
-            content: invoicePDF,
+            name: "invoice.pdf",
+            content: invoicePDF.toString("base64"),
+            contentType: "application/pdf",
           },
         ],
       });
 
       console.log("📧 Invoice email sent:", user.email);
     } catch (emailErr) {
-      console.error("❌ Invoice email failed:", emailErr);
+      console.error(
+        "❌ Brevo invoice email failed:",
+        emailErr.response?.body || emailErr
+      );
     }
 
-    // ✅ Respond AFTER email
+    // ✅ Respond AFTER email attempt
     return res.json({
       success: true,
       message: "Plan Activated Successfully",
