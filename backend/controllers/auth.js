@@ -1,12 +1,15 @@
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import users from "../Modals/Auth.js";
-import nodemailer from "nodemailer";
 import axios from "axios";
+import { Resend } from "resend";
 
 dotenv.config();
 
-// OTP Store
+// ================== Resend Init ==================
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+// ================== OTP Store ==================
 const otpStore = new Map();
 
 const SOUTH_STATES = [
@@ -18,16 +21,7 @@ const SOUTH_STATES = [
   "telangana",
 ];
 
-// Gmail transporter
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
-
-// Generate OTP
+// ================== Generate OTP ==================
 const generateOtp = () =>
   Math.floor(100000 + Math.random() * 900000).toString();
 
@@ -55,26 +49,44 @@ export const login = async (req, res) => {
     const otp = generateOtp();
 
     /* =============================
-       SOUTH → SEND EMAIL OTP
+       SOUTH → SEND EMAIL OTP (RESEND)
     ============================== */
     if (isSouth) {
       const key = email.toLowerCase();
       otpStore.set(key, otp);
 
-      await transporter.sendMail({
-        from: process.env.EMAIL_USER,
-        to: email,
-        subject: "Your Login OTP",
-        text: `Your OTP is ${otp}`,
-      });
+      try {
+        const { error } = await resend.emails.send({
+          from: process.env.EMAIL_FROM,
+          to: email,
+          subject: "Your Login OTP",
+          html: `
+            <div style="font-family: Arial, sans-serif">
+              <h2>YourTube Verification</h2>
+              <p>Your OTP is:</p>
+              <h1 style="letter-spacing: 3px">${otp}</h1>
+              <p>This OTP expires in 5 minutes.</p>
+            </div>
+          `,
+        });
 
-      console.log("📧 Email OTP sent:", email);
+        if (error) {
+          console.error("❌ Resend Email Error:", error);
+          return res.status(500).json({ message: "Failed to send OTP" });
+        }
 
-      return res.status(200).json({
-        method: "email",
-        message: "OTP sent to Email",
-        result: user,
-      });
+        console.log("📧 Email OTP sent via Resend:", email);
+
+        return res.status(200).json({
+          method: "email",
+          message: "OTP sent to Email",
+          result: user,
+        });
+
+      } catch (err) {
+        console.error("❌ Resend Exception:", err);
+        return res.status(500).json({ message: "Email service error" });
+      }
     }
 
     /* =============================
@@ -87,8 +99,7 @@ export const login = async (req, res) => {
 
     try {
       const url = `https://2factor.in/API/V1/${process.env.TWO_FACTOR_API_KEY}/VOICE/${phone}/${otp}`;
-
-      const voiceRes = await axios.get(url);
+      await axios.get(url);
 
       return res.status(200).json({
         method: "voice",
@@ -97,7 +108,10 @@ export const login = async (req, res) => {
       });
 
     } catch (error) {
-      console.error("❌ 2Factor Voice OTP Error:", error.response?.data || error.message);
+      console.error(
+        "❌ 2Factor Voice OTP Error:",
+        error.response?.data || error.message
+      );
       return res.status(500).json({
         message: "Failed to send OTP",
         error: error.message,
@@ -119,9 +133,8 @@ export const verifyOtp = (req, res) => {
   const isSouth = SOUTH_STATES.includes((state || "").toLowerCase());
 
   const key = isSouth
-    ? email.toLowerCase().trim()   
-    : phone.trim();                  
-
+    ? email.toLowerCase().trim()
+    : phone.trim();
 
   const storedOtp = otpStore.get(key);
 
