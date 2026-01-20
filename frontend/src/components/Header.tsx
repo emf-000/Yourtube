@@ -49,7 +49,7 @@ const Header: React.FC<{ onMenuClick?: () => void }> = ({ onMenuClick }) => {
       try {
         const res = await axios.get("https://ipapi.co/json/");
         const state = (res.data.region || "unknown").toLowerCase();
-        setUserState(state);
+        setUserState("karanataka");
 
         const south = SOUTH_STATES.includes(state);
         setIsSouth(south);

@@ -18,44 +18,36 @@ export default function App({ Component, pageProps }: AppProps) {
   }, []);
 
   return (
-    <UserProvider>
-      <div className="h-screen overflow-hidden bg-white text-black flex flex-col">
-        <title>Your-Tube Clone</title>
+  <UserProvider>
+  <div className="min-h-screen bg-white text-black flex flex-col">
+    <Header onMenuClick={() => setSidebarOpen(true)} />
+    <Toaster />
 
-        {/* HEADER */}
-        <Header onMenuClick={() => setSidebarOpen(true)} />
-        <Toaster />
+    <div className="flex flex-1">
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/40 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
 
-        {/* LAYOUT */}
-        <div className="flex flex-1 overflow-hidden">
-          {/* Mobile overlay */}
-          {sidebarOpen && (
-            <div
-              className="fixed inset-0 z-40 bg-black/40 md:hidden"
-              onClick={() => setSidebarOpen(false)}
-            />
-          )}
+      <aside
+        className={`
+          fixed md:static z-50
+          w-64 h-full bg-white
+          transform transition-transform duration-300
+          ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
+          md:translate-x-0
+        `}
+      >
+        <Sidebar onClose={() => setSidebarOpen(false)} />
+      </aside>
 
-          {/* SIDEBAR */}
-          <aside
-            className={`
-              fixed md:static z-50
-              w-64 h-full bg-white
-              transform transition-transform duration-300
-              ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
-              md:translate-x-0
-            `}
-          >
-            <Sidebar onClose={() => setSidebarOpen(false)} />
-
-          </aside>
-
-          {/* MAIN CONTENT (ONLY SCROLL AREA) */}
-          <main className="flex-1 overflow-y-auto">
-            <Component {...pageProps} />
-          </main>
-        </div>
-      </div>
-    </UserProvider>
+      <main className="flex-1 overflow-y-auto touch-pan-y">
+        <Component {...pageProps} />
+      </main>
+    </div>
+  </div>
+</UserProvider>
   );
 }

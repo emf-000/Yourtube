@@ -13,27 +13,35 @@ import { Button } from "./ui/button";
 import Channeldialogue from "./channeldialogue";
 import { useUser } from "@/lib/AuthContext";
 
-const Sidebar = ({ onClose }: { onClose: () => void }) => {
+interface SidebarProps {
+  onClose?: () => void;
+}
+
+const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
   const { user } = useUser();
   const [isdialogeopen, setisdialogeopen] = useState(false);
 
+  const handleClick = () => {
+    if (onClose) onClose(); // 👈 CLOSE SIDEBAR ON MOBILE
+  };
+
   return (
     <nav className="space-y-1 p-2">
-      <Link href="/" onClick={onClose}>
+      <Link href="/" onClick={handleClick}>
         <Button variant="ghost" className="w-full justify-start">
           <Home className="w-5 h-5 mr-3" />
           Home
         </Button>
       </Link>
 
-      <Link href="/explore" onClick={onClose}>
+      <Link href="/explore" onClick={handleClick}>
         <Button variant="ghost" className="w-full justify-start">
           <Compass className="w-5 h-5 mr-3" />
           Explore
         </Button>
       </Link>
 
-      <Link href="/subscriptions" onClick={onClose}>
+      <Link href="/subscriptions" onClick={handleClick}>
         <Button variant="ghost" className="w-full justify-start">
           <PlaySquare className="w-5 h-5 mr-3" />
           Subscriptions
@@ -42,28 +50,28 @@ const Sidebar = ({ onClose }: { onClose: () => void }) => {
 
       {user && (
         <div className="border-t pt-2 mt-2">
-          <Link href="/history" onClick={onClose}>
+          <Link href="/history" onClick={handleClick}>
             <Button variant="ghost" className="w-full justify-start">
               <History className="w-5 h-5 mr-3" />
               History
             </Button>
           </Link>
 
-          <Link href="/liked" onClick={onClose}>
+          <Link href="/liked" onClick={handleClick}>
             <Button variant="ghost" className="w-full justify-start">
               <ThumbsUp className="w-5 h-5 mr-3" />
               Liked videos
             </Button>
           </Link>
 
-          <Link href="/watch-later" onClick={onClose}>
+          <Link href="/watch-later" onClick={handleClick}>
             <Button variant="ghost" className="w-full justify-start">
               <Clock className="w-5 h-5 mr-3" />
               Watch later
             </Button>
           </Link>
 
-          <Link href="/downloads" onClick={onClose}>
+          <Link href="/downloads" onClick={handleClick}>
             <Button variant="ghost" className="w-full justify-start">
               <PlaySquare className="w-5 h-5 mr-3" />
               Downloads
@@ -71,7 +79,7 @@ const Sidebar = ({ onClose }: { onClose: () => void }) => {
           </Link>
 
           {user?.channelname ? (
-            <Link href={`/channel/${user.id}`} onClick={onClose}>
+            <Link href={`/channel/${user.id}`} onClick={handleClick}>
               <Button variant="ghost" className="w-full justify-start">
                 <User className="w-5 h-5 mr-3" />
                 Your channel
