@@ -14,10 +14,15 @@ export default function Videopplayer({
 }: VideopplayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const hideTimer = useRef<NodeJS.Timeout | null>(null);
   const { user } = useUser();
 
   const [limitReached, setLimitReached] = useState(false);
   const [seekFeedback, setSeekFeedback] = useState<null | "left" | "right">(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [showControls, setShowControls] = useState(true);
 
   const videoUrl = `https://res.cloudinary.com/${process.env.NEXT_PUBLIC_CLOUD_NAME}/video/upload/${video.cloudinary_id}`;
 
@@ -37,7 +42,7 @@ export default function Videopplayer({
     const check = () => {
       if (!limitReached && el.currentTime >= allowedSeconds) {
         el.pause();
-        el.controls = false;
+        setIsPlaying(false);
         setLimitReached(true);
         alert("⛔ Your watch time is over.");
       }
@@ -47,6 +52,36 @@ export default function Videopplayer({
     return () => el.removeEventListener("timeupdate", check);
   }, [user, limitReached]);
 
+  /* ================= VIDEO SYNC ================= */
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const update = () => {
+      setProgress(video.currentTime);
+      setDuration(video.duration || 0);
+    };
+
+    video.addEventListener("timeupdate", update);
+    video.addEventListener("loadedmetadata", update);
+
+    return () => {
+      video.removeEventListener("timeupdate", update);
+      video.removeEventListener("loadedmetadata", update);
+    };
+  }, []);
+
+  /* ================= SHOW / HIDE CONTROLS ================= */
+  const showControlsTemporarily = () => {
+    setShowControls(true);
+
+    if (hideTimer.current) clearTimeout(hideTimer.current);
+
+    hideTimer.current = setTimeout(() => {
+      setShowControls(false);
+    }, 2000);
+  };
+
   /* ================= GESTURES ================= */
   useEffect(() => {
     const container = containerRef.current;
@@ -55,10 +90,13 @@ export default function Videopplayer({
 
     let tapCount = 0;
     let tapTimer: any = null;
-
     const TAP_WINDOW = 420;
 
     const onPointerDown = (e: PointerEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      showControlsTemporarily();
       if (limitReached) return;
 
       tapCount++;
@@ -76,9 +114,19 @@ export default function Videopplayer({
             ? "right"
             : "center";
 
+        // SINGLE TAP
         if (tapCount === 1 && area === "center") {
-          videoEl.paused ? videoEl.play() : videoEl.pause();
-        } else if (tapCount === 2) {
+          if (videoEl.paused) {
+            videoEl.play();
+            setIsPlaying(true);
+          } else {
+            videoEl.pause();
+            setIsPlaying(false);
+          }
+        }
+
+        //  DOUBLE TAP
+        else if (tapCount === 2) {
           if (area === "right") {
             videoEl.currentTime += 10;
             setSeekFeedback("right");
@@ -88,7 +136,10 @@ export default function Videopplayer({
             setSeekFeedback("left");
           }
           setTimeout(() => setSeekFeedback(null), 400);
-        } else if (tapCount >= 3) {
+        }
+
+        //  TRIPLE TAP
+        else if (tapCount >= 3) {
           if (area === "left") onShowComments();
           if (area === "center") alert("Next video");
           if (area === "right") window.location.href = "/";
@@ -110,36 +161,75 @@ export default function Videopplayer({
   return (
     <div
       ref={containerRef}
-      className="
-        relative
-        w-full
-        bg-black
-        rounded-lg
-        overflow-hidden
-        aspect-video
-        sm:aspect-video
-        max-h-[60vh]
-      "
+      onMouseMove={showControlsTemporarily}
+      onTouchStart={showControlsTemporarily}
+      className="relative w-full aspect-video bg-black rounded-xl overflow-hidden"
     >
       <video
         ref={videoRef}
+        src={videoUrl}
         className="w-full h-full object-contain"
-        controls
         playsInline
-        preload="auto"
-      >
-        <source src={videoUrl} type="video/mp4" />
-      </video>
+        preload="metadata"
+        controls={false}
+        disablePictureInPicture
+        onContextMenu={(e) => e.preventDefault()}
+      />
+
+      <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/80 to-transparent pointer-events-none" />
+
+      {showControls && !limitReached && (
+        <div className="absolute bottom-3 left-3 right-3 text-white space-y-2">
+          <input
+            type="range"
+            min={0}
+            max={duration}
+            value={progress}
+            step={0.1}
+            onChange={(e) => {
+              if (videoRef.current)
+                videoRef.current.currentTime = Number(e.target.value);
+            }}
+            className="w-full accent-red-600 cursor-pointer"
+          />
+
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => {
+                if (!videoRef.current) return;
+                if (videoRef.current.paused) {
+                  videoRef.current.play();
+                  setIsPlaying(true);
+                } else {
+                  videoRef.current.pause();
+                  setIsPlaying(false);
+                }
+              }}
+              className="text-xl"
+            >
+              {isPlaying ? "❚❚" : "▶"}
+            </button>
+
+            <span className="text-sm opacity-80">
+              {Math.floor(progress / 60)}:
+              {String(Math.floor(progress % 60)).padStart(2, "0")} /
+              {Math.floor(duration / 60)}:
+              {String(Math.floor(duration % 60)).padStart(2, "0")}
+            </span>
+
+            <button
+              onClick={() => videoRef.current?.requestFullscreen()}
+              className="ml-auto"
+            >
+              ⛶
+            </button>
+          </div>
+        </div>
+      )}
 
       {seekFeedback && (
-        <div
-          className={`absolute inset-0 flex items-center ${
-            seekFeedback === "right"
-              ? "justify-end pr-8 sm:pr-16"
-              : "justify-start pl-8 sm:pl-16"
-          } pointer-events-none`}
-        >
-          <div className="bg-black/70 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-base sm:text-lg font-semibold">
+        <div className="absolute inset-0 flex items-center pointer-events-none">
+          <div className="bg-black/70 text-white px-4 py-2 rounded-full mx-auto">
             {seekFeedback === "right" ? "+10s" : "-10s"}
           </div>
         </div>

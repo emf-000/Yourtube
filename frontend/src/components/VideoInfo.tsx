@@ -120,7 +120,7 @@ const VideoInfo: React.FC<VideoInfoProps> = ({ video }) => {
   };
 
   const handleDownload = async () => {
-    if (!user) return alert("Please login to save video");
+    if (!user) return alert("Please login to download");
 
     try {
       const res = await axiosInstance.post(`/download/${video._id}`, {
@@ -132,16 +132,13 @@ const VideoInfo: React.FC<VideoInfoProps> = ({ video }) => {
         return;
       }
 
-      alert("Video added to Downloads");
+      alert("Video Downloaded");
     } catch (err) {
       console.log(err);
       alert("Download failed");
     }
   };
 
-  // -----------------------
-  // Existing Premium (unlimited downloads) Razorpay flow — unchanged
-  // -----------------------
   const startRazorpayPayment = async () => {
     try {
       const res = await axiosInstance.post("/payment/order");
@@ -173,9 +170,6 @@ const VideoInfo: React.FC<VideoInfoProps> = ({ video }) => {
     }
   };
 
-  // -----------------------
-  // NEW: Plan purchase (Bronze / Silver / Gold) Razorpay flow
-  // -----------------------
   const startPlanPayment = async (selectedPlan: "bronze" | "silver" | "gold") => {
     if (!user) return alert("Please login to upgrade your plan");
 

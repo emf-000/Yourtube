@@ -4,7 +4,6 @@ import { formatDistanceToNow } from "date-fns";
 import { Avatar, AvatarFallback } from "./ui/avatar";
 
 export default function VideoCard({ video }: any) {
-  // Format duration mm:ss
   const formatDuration = (sec: number) => {
     if (!sec) return "0:00";
     const m = Math.floor(sec / 60);
@@ -12,13 +11,11 @@ export default function VideoCard({ video }: any) {
     return `${m}:${s < 10 ? "0" + s : s}`;
   };
 
-  // Proper Cloudinary Thumbnail
   const thumbnail = `https://res.cloudinary.com/${process.env.NEXT_PUBLIC_CLOUD_NAME}/video/upload/so_1/${video.cloudinary_id}.jpg`;
 
   return (
     <Link href={`/watch/${video?._id}`} className="group">
       <div className="space-y-2 sm:space-y-3">
-        {/* Thumbnail */}
         <div className="relative aspect-video rounded-lg overflow-hidden bg-gray-100">
           <img
             src={thumbnail}
@@ -26,13 +23,11 @@ export default function VideoCard({ video }: any) {
             alt={video.videotitle}
           />
 
-          {/* Duration */}
           <div className="absolute bottom-1.5 right-1.5 sm:bottom-2 sm:right-2 bg-black/80 text-white text-[10px] sm:text-xs px-1 rounded">
             {formatDuration(video.duration || 0)}
           </div>
         </div>
 
-        {/* Description */}
         <div className="flex gap-2 sm:gap-3">
           <Avatar className="w-8 h-8 sm:w-9 sm:h-9 flex-shrink-0">
             <AvatarFallback className="text-xs sm:text-sm">
