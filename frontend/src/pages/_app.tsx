@@ -26,20 +26,23 @@ export default function App({ Component, pageProps }: AppProps) {
     <div className="flex flex-1">
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/40 md:hidden"
+          className="fixed inset-0 z-20 bg-black/40 md:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       <aside
-        className={`
-          fixed md:static z-30
-          w-64 h-full bg-white
-          transform transition-transform duration-300
-          ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
-          md:translate-x-0
-        `}
-      >
+      className={`
+        fixed inset-y-0 left-0
+        ${sidebarOpen ? "z-50" : "z-30"}
+        w-64
+        bg-white dark:bg-gray-900
+        transform transition-transform duration-300
+        ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
+        md:static md:translate-x-0 md:h-auto
+  `}
+>
+
         <Sidebar onClose={() => setSidebarOpen(false)} />
       </aside>
 
