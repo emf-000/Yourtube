@@ -12,6 +12,10 @@ export default function WatchPage() {
 
   const [video, setVideo] = useState<any>(null);
   const [allVideos, setAllVideos] = useState<any[]>([]);
+  const currentIndex = allVideos.findIndex((v) => v._id === id);
+  const nextVideo =
+  currentIndex !== -1 ? allVideos[currentIndex + 1] : null;
+
   const [loading, setLoading] = useState(true);
 
   const commentsRef = useRef<HTMLDivElement>(null);
@@ -64,7 +68,7 @@ export default function WatchPage() {
       >
         {/* MAIN CONTENT */}
         <div className="lg:col-span-2 space-y-4">
-          <Videopplayer video={video} onShowComments={openComments} />
+          <Videopplayer video={video} onShowComments={openComments} nextVideoId={nextVideo?._id} />
           <VideoInfo video={video} />
 
           <div ref={commentsRef}>

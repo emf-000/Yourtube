@@ -2,20 +2,25 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useUser } from "@/lib/AuthContext";
+import { useRouter } from "next/navigation";
 
 interface VideopplayerProps {
   video: any;
   onShowComments: () => void;
+  nextVideoId?: string;
 }
+
 
 export default function Videopplayer({
   video,
   onShowComments,
+  nextVideoId,
 }: VideopplayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const hideTimer = useRef<NodeJS.Timeout | null>(null);
   const { user } = useUser();
+  const router = useRouter();
 
   const [limitReached, setLimitReached] = useState(false);
   const [seekFeedback, setSeekFeedback] = useState<null | "left" | "right">(null);
@@ -90,7 +95,7 @@ export default function Videopplayer({
 
     let tapCount = 0;
     let tapTimer: any = null;
-    const TAP_WINDOW = 420;
+    const TAP_WINDOW = 500;
 
     const onPointerDown = (e: PointerEvent) => {
       e.preventDefault();
@@ -139,12 +144,20 @@ export default function Videopplayer({
         }
 
         //  TRIPLE TAP
-        else if (tapCount >= 3) {
-          if (area === "left") onShowComments();
-          if (area === "center") alert("Next video");
-          if (area === "right") window.location.href = "/";
-        }
+        // TRIPLE TAP
+    else if (tapCount >= 3) {
+      if (area === "left") {
+        onShowComments();
+      }
 
+      if (area === "center" && nextVideoId) {
+        router.push(`/watch/${nextVideoId}`);
+      }
+
+      if (area === "right") {
+        router.push("/");
+      }
+    }
         tapCount = 0;
         tapTimer = null;
       }, TAP_WINDOW);
