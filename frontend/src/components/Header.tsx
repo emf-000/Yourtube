@@ -49,12 +49,12 @@ const Header: React.FC<{ onMenuClick?: () => void }> = ({ onMenuClick }) => {
       try {
         const res = await axios.get("https://ipapi.co/json/");
         const state = (res.data.region || "unknown").toLowerCase();
-        setUserState("karnataka");
+        setUserState("karnataka"); // For testing purposes, set a default state
 
-        const south = SOUTH_STATES.includes(state);
+        const south = SOUTH_STATES.includes("karnataka");
         setIsSouth(south);
 
-        const hour = new Date().getHours();
+        const hour = 11;
         const isTime = hour >= 10 && hour <= 12;
 
         const whiteTheme = south && isTime;
