@@ -33,7 +33,7 @@ export default function App({ Component, pageProps }: AppProps) {
 
       <aside
         className={`
-          fixed md:static z-50
+          fixed md:static z-30
           w-64 h-full bg-white
           transform transition-transform duration-300
           ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
