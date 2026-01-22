@@ -28,6 +28,7 @@ export default function Videopplayer({
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
   const [showControls, setShowControls] = useState(true);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   const videoUrl = `https://res.cloudinary.com/${process.env.NEXT_PUBLIC_CLOUD_NAME}/video/upload/${video.cloudinary_id}`;
 
@@ -87,6 +88,23 @@ export default function Videopplayer({
     }, 2000);
   };
 
+  useEffect(() => {
+  const onFsChange = () => {
+    setIsFullscreen(
+      !!document.fullscreenElement ||
+      (videoRef.current as any)?.webkitDisplayingFullscreen
+    );
+  };
+
+  document.addEventListener("fullscreenchange", onFsChange);
+  document.addEventListener("webkitfullscreenchange", onFsChange);
+
+  return () => {
+    document.removeEventListener("fullscreenchange", onFsChange);
+    document.removeEventListener("webkitfullscreenchange", onFsChange);
+  };
+}, []);
+
   /* ================= GESTURES ================= */
   useEffect(() => {
     const container = containerRef.current;
@@ -144,7 +162,6 @@ export default function Videopplayer({
         }
 
         //  TRIPLE TAP
-        // TRIPLE TAP
     else if (tapCount >= 3) {
       if (area === "left") {
         onShowComments();
@@ -169,19 +186,19 @@ export default function Videopplayer({
       container.removeEventListener("pointerdown", onPointerDown);
       if (tapTimer) clearTimeout(tapTimer);
     };
-  }, [limitReached, onShowComments]);
+  }, [limitReached, onShowComments, nextVideoId, router]);
 
   return (
     <div
       ref={containerRef}
       onMouseMove={showControlsTemporarily}
       onTouchStart={showControlsTemporarily}
-      className="relative w-full aspect-video bg-black rounded-xl overflow-hidden"
+      className="video-player relative w-full rounded-xl overflow-hidden"
     >
       <video
         ref={videoRef}
         src={videoUrl}
-        className="w-full h-full object-contain"
+        className={`w-full h-full ${isFullscreen ? "object-contain" : "object-cover"}`}
         playsInline
         preload="metadata"
         controls={false}
@@ -189,10 +206,9 @@ export default function Videopplayer({
         onContextMenu={(e) => e.preventDefault()}
       />
 
-      <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/80 to-transparent pointer-events-none" />
-
       {showControls && !limitReached && (
-        <div className="absolute bottom-3 left-3 right-3 text-white space-y-2">
+          <div className="absolute bottom-0 inset-x-0 bg-white/80 dark:bg-black/60 backdrop-blur-sm p-3 text-black dark:text-white space-y-2">
+
           <input
             type="range"
             min={0}

@@ -54,7 +54,7 @@ const Header: React.FC<{ onMenuClick?: () => void }> = ({ onMenuClick }) => {
         const south = SOUTH_STATES.includes("karnataka");
         setIsSouth(south);
 
-        const hour = new Date().getHours();
+        const hour = new Date().getHours();  
         const isTime = hour >= 10 && hour <= 12;
 
         const whiteTheme = south && isTime;
