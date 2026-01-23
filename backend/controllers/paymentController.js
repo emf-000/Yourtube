@@ -29,7 +29,7 @@ export const activatePremium = async (req, res) => {
 
     await User.findByIdAndUpdate(userId, { is_premium: true });
 
-    res.json({ success: true, message: "Premium Activated ✅" });
+    res.json({ success: true, message: "Premium Activated" });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

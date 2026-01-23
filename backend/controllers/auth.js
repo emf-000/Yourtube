@@ -6,12 +6,10 @@ import Brevo from "sib-api-v3-sdk";
 
 dotenv.config();
 
-// ================== BREVO INIT ==================
 const brevoClient = Brevo.ApiClient.instance;
 brevoClient.authentications["api-key"].apiKey = process.env.BREVO_API_KEY;
 const brevoApi = new Brevo.TransactionalEmailsApi();
 
-// ================== OTP STORE ==================
 const otpStore = new Map();
 
 const SOUTH_STATES = [
@@ -23,15 +21,11 @@ const SOUTH_STATES = [
   "telangana",
 ];
 
-// ================== OTP GENERATOR ==================
 const generateOtp = () =>
   Math.floor(100000 + Math.random() * 900000).toString();
 
-/* ======================================================
-   LOGIN — SEND OTP
-====================================================== */
 export const login = async (req, res) => {
-  console.log("📩 LOGIN REQUEST:", req.body);
+  console.log(" LOGIN REQUEST:", req.body);
 
   const { email, name, image, state, phone } = req.body;
 
@@ -58,9 +52,6 @@ export const login = async (req, res) => {
 
     const otp = generateOtp();
 
-    /* =============================
-       SOUTH → EMAIL OTP (BREVO)
-    ============================== */
     if (isSouth) {
       const key = `email:${normalizedEmail}`;
 
@@ -83,7 +74,7 @@ export const login = async (req, res) => {
           `,
         });
 
-        console.log("📧 OTP SENT (EMAIL):", normalizedEmail);
+        console.log(" OTP SENT (EMAIL):", normalizedEmail);
 
         return res.status(200).json({
           method: "email",
@@ -91,14 +82,11 @@ export const login = async (req, res) => {
         });
 
       } catch (err) {
-        console.error("❌ BREVO EMAIL ERROR:", err);
+        console.error(" BREVO EMAIL ERROR:", err);
         return res.status(500).json({ message: "Failed to send OTP" });
       }
     }
 
-    /* =============================
-       NON-SOUTH → VOICE OTP
-    ============================== */
     if (!normalizedPhone) {
       return res.status(400).json({ message: "Phone number required" });
     }
@@ -110,7 +98,7 @@ export const login = async (req, res) => {
       const url = `https://2factor.in/API/V1/${process.env.TWO_FACTOR_API_KEY}/VOICE/${normalizedPhone}/${otp}`;
       await axios.get(url);
 
-      console.log("📞 OTP SENT (VOICE):", normalizedPhone);
+      console.log(" OTP SENT (VOICE):", normalizedPhone);
 
       return res.status(200).json({
         method: "voice",
@@ -118,19 +106,16 @@ export const login = async (req, res) => {
       });
 
     } catch (error) {
-      console.error("❌ VOICE OTP ERROR:", error);
+      console.error(" VOICE OTP ERROR:", error);
       return res.status(500).json({ message: "Failed to send OTP" });
     }
 
   } catch (error) {
-    console.error("❌ LOGIN ERROR:", error);
+    console.error(" LOGIN ERROR:", error);
     return res.status(500).json({ message: "Something went wrong" });
   }
 };
 
-/* ======================================================
-   VERIFY OTP
-====================================================== */
 export const verifyOtp = (req, res) => {
   const { email, phone, otp, state } = req.body;
 
@@ -150,7 +135,7 @@ export const verifyOtp = (req, res) => {
 
   const storedOtp = otpStore.get(key);
 
-  console.log("🔍 VERIFY OTP:", {
+  console.log(" VERIFY OTP:", {
     key,
     storedOtp,
     enteredOtp: otp,
@@ -172,9 +157,6 @@ export const verifyOtp = (req, res) => {
   });
 };
 
-/* ======================================================
-   GET USER
-====================================================== */
 export const getUser = async (req, res) => {
   const { email } = req.body;
 
@@ -194,14 +176,11 @@ export const getUser = async (req, res) => {
     return res.status(200).json({ result: user });
 
   } catch (err) {
-    console.error("❌ GET USER ERROR:", err);
+    console.error(" GET USER ERROR:", err);
     return res.status(500).json({ message: "Something went wrong" });
   }
 };
 
-/* ======================================================
-   UPDATE PROFILE
-====================================================== */
 export const updateprofile = async (req, res) => {
   const { id: _id } = req.params;
   const { channelname, description } = req.body;
@@ -220,7 +199,7 @@ export const updateprofile = async (req, res) => {
     return res.status(200).json(updated);
 
   } catch (err) {
-    console.error("❌ UPDATE PROFILE ERROR:", err);
+    console.error(" UPDATE PROFILE ERROR:", err);
     return res.status(500).json({ message: "Something went wrong" });
   }
 };

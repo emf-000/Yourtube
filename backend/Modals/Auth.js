@@ -8,12 +8,10 @@ const userschema = mongoose.Schema({
   image: { type: String },
   joinedon: { type: Date, default: Date.now },
 
-    // Subscription fields
   plan: { type: String, enum: ["free", "bronze", "silver", "gold"], default: "free" },
   watch_limit_minutes: { type: Number, default: 5 },
   plan_updated_at: { type: Date },
 
-  // Payment history
   payments: [
     {
       plan: String,

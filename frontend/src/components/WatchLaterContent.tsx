@@ -80,7 +80,6 @@ export default function WatchLaterContent() {
 
   return (
     <div className="space-y-4 px-2 sm:px-0">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
         <p className="text-xs sm:text-sm text-gray-600">
           {watchLater.length} videos
@@ -91,7 +90,6 @@ export default function WatchLaterContent() {
         </Button>
       </div>
 
-      {/* List */}
       <div className="space-y-4">
         {watchLater.map((item) => (
           <div

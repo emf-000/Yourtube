@@ -8,20 +8,15 @@ import Brevo from "sib-api-v3-sdk";
 
 dotenv.config();
 
-// ================== RAZORPAY INIT ==================
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
   key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
 
-// ================== BREVO INIT (ONCE) ==================
 const brevoClient = Brevo.ApiClient.instance;
 brevoClient.authentications["api-key"].apiKey = process.env.BREVO_API_KEY;
 const brevoApi = new Brevo.TransactionalEmailsApi();
 
-// --------------------------------------------------
-// CREATE RAZORPAY ORDER FOR PLAN
-// --------------------------------------------------
 export const createPlanOrder = async (req, res) => {
   try {
     const { plan } = req.body;
@@ -46,9 +41,6 @@ export const createPlanOrder = async (req, res) => {
   }
 };
 
-// --------------------------------------------------
-// VERIFY PAYMENT + ACTIVATE PLAN + SEND INVOICE
-// --------------------------------------------------
 export const handlePlanPaymentSuccess = async (req, res) => {
   try {
     const {
@@ -71,7 +63,6 @@ export const handlePlanPaymentSuccess = async (req, res) => {
         .json({ success: false, message: "Missing required fields" });
     }
 
-    // ✅ Verify Razorpay Signature
     const expectedSignature = crypto
       .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
       .update(`${razorpay_order_id}|${razorpay_payment_id}`)
@@ -90,7 +81,6 @@ export const handlePlanPaymentSuccess = async (req, res) => {
         .json({ success: false, message: "User not found" });
     }
 
-    // ✅ Update user plan
     user.plan = plan;
     user.plan_updated_at = new Date();
     user.watch_limit_minutes =
@@ -108,15 +98,13 @@ export const handlePlanPaymentSuccess = async (req, res) => {
     user.payments.push(paymentRecord);
     await user.save();
 
-    // ✅ Generate Invoice PDF
     const invoicePDF = await generateInvoicePdf(user, paymentRecord);
 
-    // ✅ Send Invoice Email via BREVO
     try {
       await brevoApi.sendTransacEmail({
         sender: {
           name: "YourTube",
-          email: process.env.EMAIL_FROM, // Gmail or domain
+          email: process.env.EMAIL_FROM,
         },
         to: [
           {
@@ -142,12 +130,11 @@ export const handlePlanPaymentSuccess = async (req, res) => {
       console.log("📧 Invoice email sent:", user.email);
     } catch (emailErr) {
       console.error(
-        "❌ Brevo invoice email failed:",
+        " Brevo invoice email failed:",
         emailErr.response?.body || emailErr
       );
     }
 
-    // ✅ Respond AFTER email attempt
     return res.json({
       success: true,
       message: "Plan Activated Successfully",
@@ -162,9 +149,6 @@ export const handlePlanPaymentSuccess = async (req, res) => {
   }
 };
 
-// --------------------------------------------------
-// GENERATE PDF INVOICE
-// --------------------------------------------------
 const generateInvoicePdf = async (user, payment) => {
   return new Promise((resolve, reject) => {
     try {

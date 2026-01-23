@@ -153,7 +153,7 @@ export const dislikeComment = async (req, res) => {
   }
 };
 
-// --------------------- AUTO-DETECT TRANSLATION ---------------------
+// --------------------- TRANSLATION ---------------------
 export const translateComment = async (req, res) => {
   const { text } = req.body;
 
@@ -168,8 +168,6 @@ export const translateComment = async (req, res) => {
     );
 
     const lara = new Translator(credentials);
-
-    // ✅ Auto-detect language → Translate → English
     const result = await lara.translate(text, undefined, "en");
 
     return res.status(200).json({ translatedText: result.translation });
@@ -177,7 +175,7 @@ export const translateComment = async (req, res) => {
   } catch (error) {
     console.error("Lara Translate error:", error.message);
     return res.status(200).json({
-      translatedText: text, // fallback
+      translatedText: text, 
       message: "Translation unavailable, showing original.",
     });
   }

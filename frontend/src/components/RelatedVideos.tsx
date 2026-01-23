@@ -22,7 +22,6 @@ export default function RelatedVideos({ videos }: RelatedVideosProps) {
           href={`/watch/${video._id}`}
           className="flex gap-2 sm:gap-3 group"
         >
-          {/* Thumbnail */}
           <div className="relative w-28 sm:w-40 aspect-video bg-gray-100 rounded overflow-hidden flex-shrink-0">
             <video
               src={vid}
@@ -30,7 +29,6 @@ export default function RelatedVideos({ videos }: RelatedVideosProps) {
             />
           </div>
 
-          {/* Info */}
           <div className="flex-1 min-w-0">
             <h3 className="font-medium text-xs sm:text-sm line-clamp-2 group-hover:text-blue-600">
               {video.videotitle}

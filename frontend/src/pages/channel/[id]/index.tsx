@@ -47,17 +47,13 @@ const index = () => {
     return (
       <div className="flex-1 min-h-screen bg-white">
         <div className="max-w-7xl mx-auto">
-          {/* Header */}
           <ChannelHeader channel={channel} user={user} />
 
-          {/* Tabs */}
           <div className="sticky top-0 z-10 bg-white">
             <Channeltabs />
           </div>
 
-          {/* Content */}
           <div className="px-2 sm:px-4 pb-6 sm:pb-8 space-y-6">
-            {/* Upload section */}
             <div className="max-w-3xl">
               <VideoUploader
                 channelId={id}
@@ -65,7 +61,6 @@ const index = () => {
               />
             </div>
 
-            {/* Videos */}
             <ChannelVideos videos={videos} />
           </div>
         </div>
