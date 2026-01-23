@@ -25,19 +25,20 @@ const Channeldialogue = ({ isopen, onclose, channeldata, mode }: any) => {
 
   const [isSubmitting, setisSubmitting] = useState(false);
 
-  useEffect(() => {
-    if (channeldata && mode === "edit") {
-      setFormData({
-        name: channeldata.name || "",
-        description: channeldata.description || "",
-      });
-    } else {
-      setFormData({
-        name: user?.name || "",
-        description: "",
-      });
-    }
-  }, [channeldata]);
+ useEffect(() => {
+  if (channeldata && mode === "edit") {
+    setFormData({
+      name: channeldata.name || "",
+      description: channeldata.description || "",
+    });
+  } else {
+    setFormData({
+      name: user?.name || "",
+      description: "",
+    });
+  }
+}, [channeldata, mode, user]);
+
 
   const handleChange = (
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -47,26 +48,36 @@ const Channeldialogue = ({ isopen, onclose, channeldata, mode }: any) => {
   };
 
   const handlesubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    const payload = {
-      channelname: formData.name,
-      description: formData.description,
-    };
+  e.preventDefault();
+  if (isSubmitting) return;
 
-    const response = await axiosInstance.patch(
-      `/user/update/${user._id}`,
-      payload
-    );
+  setisSubmitting(true);
 
-    login(response?.data);
-    router.push(`/channel/${user?._id}`);
-    setFormData({ name: "", description: "" });
-    onclose();
+  const payload = {
+    channelname: formData.name,
+    description: formData.description,
   };
 
+  const response = await axiosInstance.patch(
+    `/user/update/${user._id}`,
+    payload
+  );
+
+  login(response?.data);
+  router.push(`/channel/${user?._id}`);
+  setFormData({ name: "", description: "" });
+  onclose();
+
+  setisSubmitting(false);
+};
+
+
   return (
-    <Dialog open={isopen} onOpenChange={onclose}>
-      <DialogContent
+    <Dialog open={isopen} onOpenChange={(open) => {
+    if (!open) onclose();
+  }}
+>
+   <DialogContent
         className="
           w-[95vw]
           max-w-sm

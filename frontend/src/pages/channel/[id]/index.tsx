@@ -8,6 +8,7 @@ import React from "react";
 
 const index = () => {
   const router = useRouter();
+  if (!router.isReady) return null;
   const { id } = router.query;
   const { user } = useUser();
 

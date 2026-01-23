@@ -76,7 +76,7 @@ export const UserProvider = ({ children }) => {
 
   return (
     <UserContext.Provider
-      value={{ user, logout, requestOTP, verifyOTP }}
+      value={{ user, login, logout, requestOTP, verifyOTP }}
     >
       {children}
     </UserContext.Provider>
