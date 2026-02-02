@@ -6,6 +6,7 @@ import {
   ThumbsUp,
   History,
   User,
+  Video,
 } from "lucide-react";
 import Link from "next/link";
 import React, { useState } from "react";
@@ -45,6 +46,13 @@ const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
         <Button variant="ghost" className="w-full justify-start">
           <PlaySquare className="w-5 h-5 mr-3" />
           Subscriptions
+        </Button>
+      </Link>
+
+      <Link href="https://voip-six.vercel.app/" onClick={handleClick}>
+        <Button variant="ghost" className="w-full justify-start">
+          <Video className="w-5 h-5 mr-3" />
+          VoIP
         </Button>
       </Link>
 

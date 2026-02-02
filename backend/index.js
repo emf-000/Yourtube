@@ -33,7 +33,6 @@ app.use("/download", downloadroutes);
 app.use("/payment", paymentroutes);
 app.use("/plan", planroutes);
 
-// DEFAULT
 app.get("/", (req, res) => {
   res.send("Yourtube backend is working ✔✔");
 });
@@ -46,7 +45,7 @@ mongoose
 
 // SERVER
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on ${PORT}`));
+app.listen(PORT, () => console.log(`Server running on PORT ${PORT}`));
 
 
 
