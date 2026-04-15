@@ -49,13 +49,6 @@ const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
         </Button>
       </Link>
 
-      <Link href="https://voip-six.vercel.app/" onClick={handleClick}>
-        <Button variant="ghost" className="w-full justify-start">
-          <Video className="w-5 h-5 mr-3" />
-          VoIP
-        </Button>
-      </Link>
-
       {user && (
         <div className="border-t pt-2 mt-2">
           <Link href="/history" onClick={handleClick}>
